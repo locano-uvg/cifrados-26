@@ -3,7 +3,7 @@ export const presentations = [
         title: "Bienvenida",
         description: "Introducción al curso de Cifrados",
         path: "temas/welcome/index.html",
-        image: "temas/cifrados/assets/cipher.png",
+        image: "temas/welcome/welcome.png",
         active: true
     },
     {
