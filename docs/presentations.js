@@ -11,7 +11,7 @@ export const presentations = [
         description: "Conceptos básicos",
         path: "temas/cifrados/index.html",
         image: "temas/cifrados/assets/cipher.png",
-        active: false
+        active: true
     },
     {
         title: "Cifrados Simétricos",
