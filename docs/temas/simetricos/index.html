@@ -179,15 +179,17 @@
             <tbody>
               <tr>
                 <td>DES (Data Encryption Standard)</td>
-                <td>Transacciones financieras</td>
+                <td>Se usa en Transacciones financieras</td>
+                <td>Legado / histórico (hoy no recomendado)</td>
               </tr>
               <tr>
                 <td>3DES (Triple DES)</td>
-                <td>Transacciones financieras</td>
+                <td>Se usa en Transacciones financieras</td>
+                <td>Legado / compatibilidad (en retiro; evitar en nuevos sistemas)</td>
               </tr>
               <tr>
                 <td>AES (Advanced Encryption Standard)</td>
-                <td>Transacciones financieras, comunicaciones seguras</td>
+                <td>Comunicaciones seguras, cifrado de datos en reposo y en tránsito</td>
               </tr>
             </tbody>
          </table>
@@ -204,18 +206,26 @@
             <tbody>
               <tr>
                 <td>Blowfish</td>
-                <td>Almacenamiento de contraseñas</td>
+                <td>Se usa en Almacenamiento de contraseñas</td>
+                <td>Cifrado de archivos/sistemas (histórico; bloque de 64 bits)</td>
               </tr>
               <tr>
                 <td>Twofish</td>
-                <td>Almacenamiento de contraseñas</td>
+                <td>Se usa en Almacenamiento de contraseñas</td>
+                <td>Cifrado de archivos/datos (alternativa a AES, menos común hoy)</td>
               </tr>
               <tr>
                 <td>Serpent</td>
-                <td>Almacenamiento de contraseñas</td>
+                <td>Se usa en Almacenamiento de contraseñas</td>
+                <td>Cifrado de archivos/datos (finalista AES, menos común hoy)</td>
               </tr>
             </tbody>
           </table>
+          <p style="font-size: 0.7em; opacity: 0.9">
+            Nota: para <b>contraseñas</b> se usan funciones de <b>hash/KDF</b> (p. ej.
+            Argon2/bcrypt/scrypt), no cifrados de bloque.
+          </p>
+        </section>
       </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>

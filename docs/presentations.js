@@ -14,6 +14,13 @@ export const presentations = [
         active: true
     },
     {
+        title: "Criptografía",
+        description: "Algoritmos históricos",
+        path: "temas/criptografia/index.html",
+        image: "temas/criptografia/assets/criptografia.png",
+        active: true
+    },
+    {
         title: "Cifrados Simétricos",
         description: "Introducción a los cifrados simétricos",
         path: "temas/simetricos/index.html",

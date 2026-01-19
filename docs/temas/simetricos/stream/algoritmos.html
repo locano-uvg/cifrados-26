@@ -46,7 +46,7 @@
           <h2>A5/3 (Kasumi)</h2>
           <ul>
             <li>Desarrollado por la 3GPP en 1999.</li>
-            <li>Utilizado en 3G y 4G.</li>
+            <li>Usado principalmente en redes móviles <b>3G</b> (histórico).</li>
           </ul>
         </section>
         <!-- OTP -->
@@ -87,14 +87,14 @@
           <h2>ChaCha20 y Salsa20</h2>
           <ul>
             <li>Desarrollado por Daniel J. Bernstein en 2008.</li>
-            <li>Utilizado en TLS y WireGuard.</li>
+            <li>ChaCha20 se usa típicamente como <b>AEAD</b>: <b>ChaCha20-Poly1305</b>.</li>
+            <li>Utilizado en TLS, WireGuard y OpenSSH.</li>
             <li>Mejor rendimiento y seguridad que RC4</li>
             <li>
-              ChaCha20 es utilizado en TLS y en el protocolo WireGuard para
-              VPNs.
+              ChaCha20-Poly1305 es común cuando no hay aceleración AES por hardware.
             </li>
             <li>
-              Salsa20 es utilizado en el protocolo de cifrado de disco LUKS.
+              Salsa20 es un diseño base; hoy suele verse más ChaCha20 / XChaCha20 en librerías modernas.
             </li>
             <li>Es considerado seguro.</li>
           </ul>
@@ -104,7 +104,7 @@
           <h2>Grain & Trivium</h2>
           <ul>
             <li>Desarrollado por Martin Hell y Thomas Johansson en 2007.</li>
-            <li>Utilizado en Bluetooth.</li>
+            <li>Diseñados para dispositivos con recursos limitados (IoT).</li>
             <li>Diseñados para dispositivos con recursos limitados (IoT).</li>
             <li>
               Es un algoritmo de cifrado de flujo basado en registros LFSR.
@@ -129,16 +129,16 @@
                   <td>Cifrado de Wi-Fi (WEP, WPA)</td>
                   <td>
                     WEP usaba RC4 (pero es inseguro). WPA2 reemplazó RC4 con
-                    AES-CCMP (bloque). WPA3 usa ChaCha20.
+                    AES-CCMP (bloque). WPA3 usa AES-GCMP.
                   </td>
-                  <td>RC4, ChaCha20</td>
+                  <td>RC4 (obsoleto), AES (CCMP/GCMP)</td>
                 </tr>
                 <tr>
                   <td>VPN</td>
                   <td>
                     Cifrado de tráfico de red entre dos dispositivos remotos.
                   </td>
-                  <td>ChaCha20, Salsa20</td>
+                  <td>ChaCha20-Poly1305, AES-GCM</td>
                 </tr>
               </tbody>
             </table>
@@ -157,7 +157,7 @@
                 <tr>
                   <td>Disco duro</td>
                   <td>Cifrado de disco duro en sistemas Linux.</td>
-                  <td>Salsa20</td>
+                  <td>AES-XTS (común)</td>
                 </tr>
                 <tr>
                   <td>IoT</td>
@@ -168,7 +168,7 @@
                 <tr>
                   <td>Bluetooth</td>
                   <td>Cifrado de tráfico de red entre dispositivos móviles.</td>
-                  <td>Grain, Trivium</td>
+                  <td>BLE: AES-CCM (común)</td>
                 </tr>
               </tbody>
             </table>
@@ -195,10 +195,10 @@
                 <tr>
                   <td>Mensajeria Segura</td>
                   <td>
-                    Signal y WhatsApp usan cifrados en flujo dentro de sus
-                    protocolos de cifrado de extremo a extremo.
+                    Protocolos modernos usan <b>AEAD</b> (p. ej. AES-GCM o ChaCha20-Poly1305)
+                    dentro de esquemas de cifrado de extremo a extremo.
                   </td>
-                  <td>ChaCha20, Salsa20</td>
+                  <td>AES-GCM, ChaCha20-Poly1305</td>
                 </tr>
               </tbody>
             </table>
@@ -208,10 +208,10 @@
         <section>
           <h2>¿Cúal es el más seguro?</h2>
           <p>
-            Hoy en día, ChaCha20 es el más popular y seguro, reemplazando a RC4
-            en muchas aplicaciones. En IoT y dispositivos embebidos, Grain y
-            Trivium siguen siendo relevantes. En redes móviles, A5/3 (Kasumi)
-            aún se usa en 3G y 4G.
+            En la práctica moderna, lo más común es usar <b>AEAD</b>:
+            <b>AES-GCM</b> (cuando hay aceleración por hardware) o
+            <b>ChaCha20-Poly1305</b> (muy popular en software y móviles).
+            En IoT/embebidos existen familias “ligeras” (según contexto).
           </p>
         </section>
       </div>

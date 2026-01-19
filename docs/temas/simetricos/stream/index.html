@@ -89,7 +89,7 @@
                 clave y nonce
               </li>
               <li>Se combina con el texto plano mediante XOR</li>
-              <li>Se utiliza una vez y se descarta</li>
+              <li>Se genera por mensaje: <b>nunca</b> se debe reutilizar el mismo nonce con la misma clave</li>
               <li>Depende de la clave y el vector de inicialización</li>
             </ul>
           </section>
@@ -108,7 +108,7 @@
             <h2>Nonce</h2>
             <p>
               Es un valor numérico que se utiliza una vez y se
-              descarta. Se utiliza para evitar la reutilización de claves.
+              descarta. <b>No es secreto</b>, pero debe ser <b>único</b> por clave para evitar reutilización de keystream.
             </p>
           </section>
           <!-- Longitud de llave -->
@@ -135,7 +135,7 @@
               </tr>
               <tr>
                 <td>128 bits</td>
-                <td>Media</td>
+                <td>Alta</td>
               </tr>
               <tr>
                 <td>256 bits</td>
