@@ -18,21 +18,21 @@ export const presentations = [
         description: "Introducción a los cifrados simétricos",
         path: "temas/simetricos/index.html",
         image: "temas/simetricos/assets/simetricos.png",
-        active: false
+        active: true
     },
     {
         title: "Stream Ciphers",
         description: "Cifrados de flujo",
         path: "temas/simetricos/stream/index.html",
         image: "temas/simetricos/assets/stream.png",
-        active: false
+        active: true
     },
     {
         title: "Algoritmos Stream Ciphers",
         description: "OTP, ChaCha20, Salsa20...",
         path: "temas/simetricos/stream/algoritmos.html",
         image: "temas/simetricos/assets/otp.png",
-        active: false
+        active: true
     },
     {
         title: "Block Ciphers",
