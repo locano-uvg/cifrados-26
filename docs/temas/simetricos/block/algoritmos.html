@@ -1,0 +1,724 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Block Ciphers</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h2>Algoritmos y Operaciones</h2>
+        </section>
+        <!-- Red Feistel -->
+        <section>
+          <section>
+            <h2><strong>Estructura</strong> Red Feistel</h2>
+          </section>
+          <section>
+            <strong>Red de Feistel</strong>
+            <p>
+              Estructura de cifrado que divide el bloque en dos mitades y aplica
+              una función de ronda a una de las mitades.
+            </p>
+            <p>
+              La salida de la función de ronda se aplica a la otra mitad y se
+              intercambian las mitades.
+            </p>
+          </section>
+          <section>
+            <strong>Red de Feistel</strong>
+            <div>
+              <img
+                style="background-color: white"
+                src="../assets/block1.png"
+                alt="Feistel Network Diagram 1"
+                height="500"
+              />
+              <img
+                src="../assets/block2.png"
+                alt="Feistel Network Diagram 2"
+                height="100"
+              />
+            </div>
+          </section>
+          <section>
+            <strong>Red de Feistel</strong>
+            <img
+              src="../assets/block.gif"
+              alt="Feistel Network Diagram 3"
+              width="700"
+            />
+          </section>
+        </section>
+
+        <!-- SPN -->
+        <section>
+          <section>
+            <h2><strong>Estructura</strong> SPN</h2>
+          </section>
+          <section>
+            <strong> Substitution-Permutation Network</strong>
+            <p>
+              Son una estructura más general que incluye sustituciones y
+              permutaciones en cada ronda.
+            </p>
+            <p>
+              En cada ronda, se aplican una capa de sustitución (S-Box) y una
+              capa de permutación (permutación de columnas y filas) y
+              sustituciones para mezclar los datos.
+            </p>
+          </section>
+          <section>
+            <strong> Substitution-Permutation Network</strong>
+            <img src="../assets/spn.jpg" alt="SPN 1 Diagram" />
+          </section>
+          <section>
+            <strong>Características de SPN</strong>
+            <ul>
+              <li>
+                División de bloques
+                <ul>
+                  <li>Divide el texto plano en sub-bloques</li>
+                </ul>
+              </li>
+              <li>
+                Rondas de Transformación
+                <ul>
+                  <li>
+                    El proceso de cifrado se realiza a través de múltiples
+                    rondas.
+                  </li>
+                  <li>
+                    Cada ronda consiste en varias operaciones, incluyendo
+                    sustituciones (Substitution) y permutaciones (Permutation).
+                  </li>
+                  <li>
+                    La cantidad de rondas puede variar según el diseño del
+                    cifrado
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <strong>Características de SPN</strong>
+            <ul>
+              <li>
+                Capa de Sustitución (S-Box)
+                <ul>
+                  <li>
+                    El S-Box es una tabla de búsqueda no lineal que sustituye
+                    cada byte del bloque por otro byte específico según una
+                    regla predefinida.
+                  </li>
+                  <li>Realiza sustituciones no lineales en los datos</li>
+                  <li>Introduce no linealidad en el cifrado y confusión</li>
+                </ul>
+              </li>
+              <li>
+                Capa de Permutación
+                <ul>
+                  <li>
+                    La capa de permutación reorganiza los bits del bloque de
+                    datos.
+                  </li>
+                  <li>Introduce difusión en el cifrado</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <strong>Características de SPN</strong>
+            <ul>
+              <li>
+                Mezcla de claves
+                <ul>
+                  <li>
+                    La clave se mezcla con los datos en cada ronda para aumentar
+                    la seguridad.
+                  </li>
+                  <li>
+                    Esta subclave se deriva de la clave maestra principal
+                    mediante un proceso llamado expansión de clave.
+                  </li>
+                </ul>
+              </li>
+            </ul>
+
+            <img
+              src="../assets/spn_meme.png"
+              alt="SPN Meme Diagram"
+              height="400"
+            />
+          </section>
+          <section>
+            <strong> Substitution-Permutation Network</strong>
+            <img src="../assets/spn1.jpg" alt="SPN Diagram" />
+          </section>
+        </section>
+
+        <!-- DES -->
+        <section>
+          <section>
+            <h2><strong>Algoritmo </strong>DES y Triple DES</h2>
+          </section>
+          <section>
+            <strong> Data Encryption Standard </strong>
+            <ul>
+              <li>Algoritmo histórico, pero inseguro.</li>
+              <li>Opera con bloques de 64 bits y claves de 56 bits.</li>
+              <li>
+                Actualmente se considera obsoleto en términos de seguridad
+                debido a la longitud de la clave relativamente corta.
+              </li>
+              <li>
+                Sin embargo, sigue siendo relevante para entender los
+                fundamentos de la criptografía de bloque.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/des.jpg" alt="DES Diagram" />
+          </section>
+          <section>
+            <h2>Estructura</h2>
+            <ul>
+              <li>
+                <strong>Tamaño bloque: </strong>DES opera en bloques de 64 bits
+              </li>
+              <li>
+                <strong>Longitud de clave: </strong>Clave de 56 bits, pero solo
+                48 bits son usados en cada ronda
+              </li>
+              <li>
+                <strong>Estructura: </strong>Utiliza una estructura Feistel de
+                16 rondas de cifrado
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Estructura</h2>
+            <ul>
+              <li>
+                <strong>Subclaves: </strong>La clave de 56 bits se expande y se
+                divide en 16 subclaves de 48 bits, una para cada rondas
+              </li>
+              <li>
+                <strong>Operación: </strong>incluyen la expansión de la clave,
+                la sustitución mediante S-Boxes (cajas de sustitución),
+                permutaciones y mezcla de clave
+              </li>
+              <li>
+                <strong>S-Box: </strong>transforman bloques de 6 bits de datos
+                en bloques de 4 bits.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/des2.jpg" alt="DES Diagram 2" />
+          </section>
+          <section>
+            <h2>Triple DES (3DES)</h2>
+            <ul>
+              <li>
+                Mejora de DES que cifra tres veces con tres claves diferentes.
+              </li>
+              <li>Aunque más seguro que DES, sigue siendo lento e inseguro.</li>
+              <li>
+                La longitud de la clave es de 168 bits, pero solo 112 bits son
+                efectivos.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/des3.jpg" alt="3DES Diagram" />
+          </section>
+          <section>
+            <h2>Ataques y Vulnerabilidades</h2>
+            <p>
+              Debido a la longitud de la clave relativamente corta, DES es
+              vulnerable a ataques de <b>fuerza bruta</b>. (El ataque
+              <i>meet-in-the-middle</i> se asocia más con 2DES/3DES.)
+            </p>
+          </section>
+          <section>
+            <img src="../assets/des_meet.jpg" alt="DES Meet" />
+          </section>
+        </section>
+
+        <!-- AES -->
+        <section>
+          <section>
+            <h2><strong>Algoritmo </strong>AES</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Advanced Encryption Standard (AES)</strong>
+              </li>
+              <li>
+                Fue creado para sustituir a DES y establecido como estándar por
+                el Instituto Nacional de Estándares y Tecnología (NIST) en 2001.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Características</h2>
+            <ul>
+              <li>
+                <strong>Tamaño bloque: </strong>Opera con bloques de 128 bits
+              </li>
+              <li>
+                <strong>Longitud de clave: </strong>Claves de 128, 192 o 256
+                bits
+              </li>
+              <li>
+                <strong>Estructura: </strong>Utiliza una estructura SPN con 10,
+                12 o 14 rondas de cifrado. Utiliza una matriz de 4x4 manteniendo
+                un estado de 16 bytes
+              </li>
+            </ul>
+          </section>
+          <section>
+            <p><strong>Algoritmo AES</strong></p>
+            <img src="../assets/aes.png" alt="AES Diagram" />
+          </section>
+          <section>
+            <p><strong>Estructura AES - Rondas</strong></p>
+            <div style="display: inline-flex">
+              <img src="../assets/aes1.jpg" alt="AES1 Diagram" />
+              <ul>
+                <li>10 rondas para claves de 128 bits</li>
+                <li>12 rondas para claves de 192 bits</li>
+                <li>14 rondas para claves de 256 bits</li>
+              </ul>
+            </div>
+          </section>
+          <section>
+            <p><strong>Estructura AES - Operación</strong></p>
+            <div style="display: inline-flex">
+              <ul>
+                <li>
+                  <strong>SubBytes: </strong>Aplica una S-Box a cada byte del
+                  bloque
+                </li>
+                <li>
+                  <strong>ShiftRows: </strong>Desplaza las filas del bloque
+                </li>
+                <li>
+                  <strong>MixColumns: </strong>Mezcla las columnas del bloque
+                </li>
+                <li>
+                  <strong>AddRoundKey: </strong>Aplica una operación XOR con la
+                  clave de ronda
+                </li>
+              </ul>
+              <img
+                src="../assets/aes2.png"
+                alt="AES2 Diagram"
+                style="background-color: white"
+              />
+            </div>
+          </section>
+          <section>
+            <p><strong>SubBytes</strong></p>
+            <img src="../assets/aes3.png" alt="AES3 Diagram" />
+          </section>
+          <section>
+            <p><strong>ShiftRows</strong></p>
+            <img src="../assets/aes4.png" alt="AES4 Diagram" />
+          </section>
+          <section>
+            <p><strong>MixColumns</strong></p>
+            <img src="../assets/aes5.png" alt="AES5 Diagram" />
+          </section>
+          <section>
+            <p><strong>AddRoundKey</strong></p>
+            <img src="../assets/aes6.png" alt="AES6 Diagram" />
+          </section>
+          <section>
+            <p><strong>AES Rounds</strong></p>
+            <img src="../assets/aes7.png" alt="AES7 Diagram" />
+          </section>
+          <section>
+            <h2>Key Schedule</h2>
+            <ul>
+              <li>
+                <strong>Key Schedule: </strong>Genera las subclaves para cada
+                ronda
+              </li>
+              <li>
+                <strong>Operación: </strong>Expande la clave maestra en una
+                matriz de 4x4 para cada ronda
+              </li>
+              <li>
+                <strong>Proceso: </strong>Aplica rotaciones, sustituciones y XOR
+              </li>
+            </ul>
+          </section>
+          <section>
+            <p><strong>AES Diagram</strong></p>
+            <img src="../assets/aes8.png" alt="AES8 Diagram" />
+          </section>
+          <section>
+            <img src="../assets/aes.gif" alt="AES Process Diagram" />
+          </section>
+          <section>
+            <h2>Ataques y Vulnerabilidades</h2>
+            <ul>
+              <li>Ataque de Padding Oracle</li>
+              <li>Debilidades de ECB</li>
+            </ul>
+          </section>
+          <section>
+            <h2>AES-NI: Aceleración por Hardware</h2>
+            <ul>
+              <li>
+                <b>AES-NI</b> (AES New Instructions) - Instrucciones especiales
+                en CPUs Intel/AMD
+              </li>
+              <li>
+                Hace AES entre <b>3-10x más rápido</b> que implementaciones en
+                software
+              </li>
+              <li>
+                Protege contra <b>ataques de tiempo</b> (timing attacks) y
+                <b>side-channel</b>
+              </li>
+              <li>
+                Disponible en la mayoría de CPUs desde 2010 (Intel Westmere, AMD
+                Bulldozer)
+              </li>
+              <li>
+                <b>Por qué es importante:</b> Explica por qué AES domina sobre
+                alternativas como Serpent o Twofish
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Rendimiento: AES vs ChaCha20</h2>
+            <table style="font-size: 0.8em">
+              <thead>
+                <tr>
+                  <th>Plataforma</th>
+                  <th>Algoritmo Preferido</th>
+                  <th>Razón</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Servidores / Laptops</td>
+                  <td><b>AES-GCM</b></td>
+                  <td>AES-NI disponible</td>
+                </tr>
+                <tr>
+                  <td>Móviles (ARM sin crypto)</td>
+                  <td><b>ChaCha20-Poly1305</b></td>
+                  <td>Más rápido en software</td>
+                </tr>
+                <tr>
+                  <td>Móviles modernos (ARM v8+)</td>
+                  <td><b>AES-GCM</b></td>
+                  <td>Crypto extensions</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </section>
+
+        <!-- DES VS AES -->
+        <section>
+          <section>
+            <h2>DES <strong>vs</strong> AES</h2>
+          </section>
+          <section>
+            <strong>DES vs AES</strong>
+            <p>
+              AES es más seguro que DES debido a la longitud de la clave y la
+              estructura de cifrado más robusta.
+            </p>
+            <p>
+              AES es más rápido y eficiente que DES, lo que lo hace ideal para
+              aplicaciones modernas.
+            </p>
+          </section>
+          <section>
+            <table>
+              <thead>
+                <tr>
+                  <th>Característica</th>
+                  <th>DES</th>
+                  <th>AES</th>
+                </tr>
+              </thead>
+              <tbody style="font-size: 0.8em">
+                <tr>
+                  <td><strong>Estructura</strong></td>
+                  <td>Feistel</td>
+                  <td>SPN</td>
+                </tr>
+                <tr>
+                  <td><strong>Tamaño Bloque</strong></td>
+                  <td>64 bits</td>
+                  <td>128 bits</td>
+                </tr>
+                <tr>
+                  <td><strong>Longitud Clave</strong></td>
+                  <td>56 bits</td>
+                  <td>128, 192, 256 bits</td>
+                </tr>
+                <tr>
+                  <td><strong>Rondas</strong></td>
+                  <td>16</td>
+                  <td>10, 12, 14</td>
+                </tr>
+                <tr>
+                  <td><strong>Seguridad</strong></td>
+                  <td>Bajo</td>
+                  <td>Alto</td>
+                </tr>
+                <tr>
+                  <td><strong>Velocidad</strong></td>
+                  <td>Lento</td>
+                  <td>Rápido</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </section>
+
+        <!-- OPERACIONES -->
+        <section>
+          <section>
+            <h2>Modos de Operación</h2>
+          </section>
+          <section>
+            <strong>Modos de Operación</strong>
+            <p>
+              Los cifrados de bloque necesitan modos de operación para cifrar
+              grandes volúmenes de datos.
+            </p>
+          </section>
+          <section>
+            <table>
+              <thead>
+                <tr>
+                  <th>Modo</th>
+                  <th>Descripción</th>
+                  <th>Ventajas</th>
+                </tr>
+              </thead>
+              <tbody style="font-size: 0.8em">
+                <tr>
+                  <td><strong>ECB (Electronic Codebook)</strong></td>
+                  <td>Cifra cada bloque de manera independiente.</td>
+                  <td>
+                    Rápido y simple, pero <b>no recomendado</b> (revela
+                    patrones).
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>CBC (Cipher Block Chaining)</strong></td>
+                  <td>Cada bloque se XOR con el anterior antes de cifrar.</td>
+                  <td>
+                    Oculta patrones, requiere <b>IV aleatorio/único</b>; no da
+                    integridad.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>CTR (Counter)</strong></td>
+                  <td>Usa un contador para cifrar cada bloque.</td>
+                  <td>
+                    Rápido y paralelizable; requiere <b>nonce único</b> y
+                    MAC/AEAD.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>CFB (Cipher Feedback Mode)</strong></td>
+                  <td>
+                    Convierte el cifrado de bloque en un cifrado de flujo.
+                  </td>
+                  <td>No necesita padding; hoy se prefiere AEAD (GCM/CCM).</td>
+                </tr>
+                <tr>
+                  <td><strong>OFB (Output Feedback Mode)</strong></td>
+                  <td>Similar a CFB pero con menos propagación de errores.</td>
+                  <td>Puede servir para flujo; hoy se prefiere AEAD.</td>
+                </tr>
+                <tr>
+                  <td><strong>GCM (Galois/Counter Mode)</strong></td>
+                  <td>Basado en CTR, pero añade autenticación.</td>
+                  <td>Cifrado + Integridad.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section>
+            <h2>Aplicaciones</h2>
+
+            <ul style="font-size: 1.5rem">
+              <li>
+                Cifrado de discos y almacenamiento seguro
+                <ul>
+                  <li>
+                    En discos, es común usar <b>AES-XTS</b> (p. ej. BitLocker /
+                    FileVault).
+                  </li>
+                  <li>AES-XTS protege almacenamiento en SSDs.</li>
+                </ul>
+              </li>
+              <li>
+                Seguridad en redes y comunicación (HTTPS, VPNs, Wi-Fi)
+                <ul>
+                  <li>
+                    En TLS 1.3 se usan suites AEAD como <b>AES-GCM</b> o
+                    <b>ChaCha20-Poly1305</b>.
+                  </li>
+                  <li>
+                    En Wi‑Fi: WPA2 usa <b>AES-CCMP</b> y WPA3 usa
+                    <b>AES-GCMP</b>.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Seguridad en transacciones bancarias y pago digital
+                <ul>
+                  <li>
+                    Se usan algoritmos simétricos modernos (principalmente AES)
+                    según el estándar/protocolo.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Seguridad en bases de datos y archivos
+                <ul>
+                  <li>
+                    Se aplica cifrado en tránsito (TLS) y cifrado en reposo
+                    (disco/TDE) usando AES/AEAD según la capa.
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Ejemplos de Aplicaciones Específicas</h2>
+            <table style="font-size: 0.75em">
+              <thead>
+                <tr>
+                  <th>Aplicación</th>
+                  <th>Algoritmo/Modo</th>
+                  <th>Uso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>BitLocker</b></td>
+                  <td>AES-128/256-XTS</td>
+                  <td>Cifrado de disco completo (Windows)</td>
+                </tr>
+                <tr>
+                  <td><b>FileVault</b></td>
+                  <td>AES-128-XTS</td>
+                  <td>Cifrado de disco completo (macOS)</td>
+                </tr>
+                <tr>
+                  <td><b>WPA3</b></td>
+                  <td>AES-128-GCMP</td>
+                  <td>Cifrado de redes Wi-Fi</td>
+                </tr>
+                <tr>
+                  <td><b>GPG/PGP</b></td>
+                  <td>AES-128/192/256-CFB</td>
+                  <td>Cifrado de archivos y emails</td>
+                </tr>
+                <tr>
+                  <td><b>1Password, Bitwarden</b></td>
+                  <td>AES-256-GCM</td>
+                  <td>Gestores de contraseñas</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section>
+            <h2>Ejemplos de Aplicaciones Específicas</h2>
+            <table style="font-size: 0.75em">
+              <thead>
+                <tr>
+                  <th>Aplicación</th>
+                  <th>Algoritmo/Modo</th>
+                  <th>Uso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Signal</b></td>
+                  <td>AES-256-CBC + HMAC-SHA256</td>
+                  <td>Cifrado de mensajes end-to-end</td>
+                </tr>
+                <tr>
+                  <td><b>WhatsApp</b></td>
+                  <td>AES-256-GCM</td>
+                  <td>Cifrado de mensajes (protocolo Signal)</td>
+                </tr>
+                <tr>
+                  <td><b>TLS 1.3</b></td>
+                  <td>AES-128/256-GCM, ChaCha20-Poly1305</td>
+                  <td>HTTPS, conexiones seguras web</td>
+                </tr>
+                <tr>
+                  <td><b>SSH</b></td>
+                  <td>AES-128/256-CTR, ChaCha20-Poly1305</td>
+                  <td>Conexiones remotas seguras</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section>
+            <h2>Tendencias Actuales (2024-2026)</h2>
+            <ul>
+              <li>
+                <b>Preferencia por AEAD:</b> GCM y ChaCha20-Poly1305 reemplazan
+                modos antiguos (CBC + HMAC)
+              </li>
+              <li>
+                <b>TLS 1.3:</b> Eliminó modos inseguros, solo permite AEAD
+              </li>
+              <li>
+                <b>Deprecación de 3DES:</b> NIST lo prohibió en 2023 para nuevos
+                sistemas
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Tendencias Actuales (2024-2026)</h2>
+            <ul>
+              <li>
+                <b>AES-256 para post-cuántico:</b> Se recomienda AES-256 para
+                protección futura contra computación cuántica
+              </li>
+              <li>
+                <b>ChaCha20 en móviles:</b> Google lo usa en Android por
+                rendimiento en chips sin AES-NI
+              </li>
+            </ul>
+          </section>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize();
+    </script>
+  </body>
+</html>

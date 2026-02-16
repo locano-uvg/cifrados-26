@@ -1,0 +1,378 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Block Ciphers</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1>Block Ciphers</h1>
+        </section>
+        <!-- AGENDA -->
+        <section>
+          <h2>Agenda</h2>
+          <ul>
+            <li>Contexto Histórico</li>
+            <li>Definición</li>
+            <li>Aplicaciones Comunes</li>
+            <li>Características</li>
+            <li>Clasificación</li>
+            <li>Estructuras</li>
+          </ul>
+        </section>
+        <!-- CONTEXTO HISTORICO -->
+        <section>
+          <section>
+            <h2>Contexto Histórico</h2>
+          </section>
+          <section>
+            <h3>Evolución de los Cifrados de Bloque</h3>
+            <ul>
+              <li>
+                <b>Años 70:</b> IBM desarrolla Lucifer, que se convierte en DES
+                (1977)
+              </li>
+              <li><b>DES</b> domina la industria por más de 20 años</li>
+              <li>
+                <b>Años 90:</b> DES se vuelve vulnerable a ataques de fuerza
+                bruta
+              </li>
+              <li>
+                <b>1997-2000:</b> NIST organiza la competencia AES
+                <ul>
+                  <li>15 candidatos iniciales</li>
+                  <li>5 finalistas: Rijndael, Serpent, Twofish, RC6, MARS</li>
+                </ul>
+              </li>
+              <li>
+                <b>2001:</b> Rijndael es seleccionado como AES, el nuevo
+                estándar
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Block Ciphers vs Stream Ciphers</h3>
+            <ul>
+              <li>
+                <b>Block Ciphers:</b> Cifran datos en bloques de tamaño fijo
+                (64, 128 bits)
+              </li>
+              <li>
+                <b>Stream Ciphers:</b> Cifran datos bit a bit o byte a byte
+                continuamente
+              </li>
+              <li>
+                Block ciphers son más versátiles y permiten diferentes
+                <b>modos de operación</b>
+              </li>
+              <li>
+                Algunos modos (CTR, CFB, OFB) convierten block ciphers en stream
+                ciphers
+              </li>
+            </ul>
+          </section>
+        </section>
+        <!-- DEFINICION -->
+        <section>
+          <section>
+            <h2>Definición</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                Cifrado que operan sobre <b>bloques de datos </b> de longitud
+                fija.
+              </li>
+              <li>
+                Divide los datos en bloques y aplican una función de cifrado a
+                cada bloque por separado.
+              </li>
+              <li>Cifra bloques de bits de manera independiente</li>
+              <li>Clave compartida entre emisor y receptor</li>
+              <li>
+                Puede requerir <b>padding</b> (p. ej. ECB/CBC); otros modos
+                (CTR/CFB/OFB) no lo requieren.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img
+              src="../assets/block_cipher.png"
+              alt="Block Cipher Diagram"
+              width="700"
+            />
+          </section>
+        </section>
+
+        <!-- CARACTERISTICAS -->
+        <section>
+          <section>
+            <h2>Características Generales</h2>
+          </section>
+          <section>
+            <ul>
+              <li>Tamaño de bloque</li>
+              <li>Seguridad</li>
+              <li>Implementación</li>
+            </ul>
+          </section>
+          <!-- Tamaño de Bloque -->
+          <section>
+            <h3>Tamaño de Bloque</h3>
+            <ul>
+              <li>Tamaño de bloque es constante</li>
+              <li>Generalmente 64 o 128 bits.</li>
+              <li>
+                En la práctica, <b>128 bits</b> es el estándar moderno; bloques
+                de 64 bits se vuelven problemáticos cuando se cifran grandes
+                volúmenes.
+              </li>
+              <li>
+                Mientras más grande se generá mayor tiempo de procesamiento
+              </li>
+            </ul>
+            <p>
+              Por ejemplo, en el caso de AES (Advanced Encryption Standard), el
+              tamaño del bloque es de 128 bits.
+            </p>
+          </section>
+          <!-- Implementación -->
+          <section>
+            <h3>Implementación</h3>
+            <ul>
+              <li>
+                Cada bloque de datos se cifra utilizando una función de cifrado
+                específica
+              </li>
+              <li>
+                Utiliza una clave secreta compartida entre el emisor y el
+                receptor.
+              </li>
+            </ul>
+            <p>
+              Esta función de cifrado puede ser un algoritmo como DES (Data
+              Encryption Standard) o AES.
+            </p>
+          </section>
+          <!-- Seguridad -->
+          <section>
+            <h3>Seguridad</h3>
+            <ul>
+              <li>Depende de la longitud de la clave</li>
+              <li>Depende de la fortaleza del algoritmo</li>
+              <li>Depende de la implementación</li>
+            </ul>
+            <p>
+              AES, por ejemplo, es ampliamente utilizado y se considera seguro
+              cuando se utiliza con claves suficientemente largas.
+            </p>
+          </section>
+        </section>
+
+        <!-- Aplicaciones Comunes -->
+        <section>
+          <section>
+            <h2>Aplicaciones Comunes</h2>
+          </section>
+          <section>
+            <h2>Aplicaciones Comunes</h2>
+            <ul>
+              <li>
+                Almacenamiento seguro de datos
+                <ul>
+                  <li>Encriptación de discos</li>
+                  <li>Encriptación de archivos</li>
+                </ul>
+              </li>
+              <li>
+                Comunicaciones seguras
+                <ul>
+                  <li>VPNs</li>
+                  <li>Correo electrónico</li>
+                  <li>Transferencia de archivos</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Aplicaciones Comunes</h2>
+            <ul>
+              <li>
+                Protección de la privacidad e integridad de los datos
+                <ul>
+                  <li>
+                    Aseguramiento de la privacidad y confidencialidad de datos
+                    almacenados en dispositivos, servidores o sistemas de
+                    almacenamiento.
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- Estructura -->
+        <section>
+          <section>
+            <h2>Estructuras y Modo de operación</h2>
+          </section>
+          <section>
+            <p>Existen dos principales estructuras:</p>
+            <ul>
+              <li>Red de Feistel</li>
+              <li>Substitution-Permutation Network - SPN</li>
+            </ul>
+          </section>
+          <section>
+            <p>Existen cinco modos de operación (clásicos):</p>
+            <ul>
+              <li>ECB (Electronic Codebook)</li>
+              <li>CBC (Cipher Block Chaining)</li>
+              <li>CTR (Counter Mode)</li>
+              <li>CFB (Cipher Feedback)</li>
+              <li>OFB (Output Feedback)</li>
+            </ul>
+          </section>
+          <section>
+            <p>Ademas existen modos autenticados:</p>
+            <ul>
+              <li>GCM (Galois/Counter Mode) - Modo autenticado (AEAD)</li>
+              <li>CCM (Counter with CBC-MAC) - Modo autenticado (AEAD)</li>
+            </ul>
+            <p style="font-size: 0.8em; opacity: 0.9">
+              Nota: hoy se prefieren modos <b>autenticados (AEAD)</b> como
+              <b>GCM</b> o <b>CCM</b>
+              para obtener confidencialidad + integridad.
+            </p>
+          </section>
+        </section>
+
+        <!-- ALGORITMOS -->
+        <section>
+          <section>
+            <h2>Algoritmos de Cifrado de Bloques</h2>
+          </section>
+          <section>
+            <p>
+              Algunos de los algoritmos de cifrado de bloques más comunes son:
+            </p>
+            <ul>
+              <li>Blowfish</li>
+              <li>Twofish</li>
+              <li>Serpent</li>
+              <li>Camellia</li>
+              <li>DES y Triple DES **</li>
+              <li>AES (Advanced Encryption Standard) **</li>
+            </ul>
+          </section>
+          <section>
+            <p>Algoritmos Más Usados y Seguros:</p>
+            <ul>
+              <li>
+                AES (Advanced Encryption Standard)
+                <ul>
+                  <li>Longitudes de clave: 128, 192, 256 bits.</li>
+                </ul>
+              </li>
+              <li>Serpent *</li>
+              <li>Twofish *</li>
+              <li>Camellia *</li>
+            </ul>
+            <p>*Finalistas de la competencia AES, pero menos usados.</p>
+          </section>
+          <section>
+            <p>Algoritmos Menos Usados y Rotos:</p>
+            <ul>
+              <li>
+                DES (Data Encryption Standard)
+                <ul>
+                  <li>Clave de solo 56 bits, vulnerable a fuerza bruta</li>
+                  <li>Reemplazado por AES (y por 3DES históricamente)</li>
+                </ul>
+              </li>
+              <li>
+                3DES (Triple DES)
+                <ul>
+                  <li>Mejora DES pero sigue siendo lento e inseguro.</li>
+                  <li>Deprecated en el 2023</li>
+                  <li>
+                    En proceso de retiro en estándares modernos; evitar en
+                    nuevos diseños.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Blowfish (bloque de 64 bits; evitar para grandes volúmenes)
+              </li>
+            </ul>
+          </section>
+          <section>
+            <p>Algoritmos Modernos para IoT y Sistemas Embebidos:</p>
+            <ul>
+              <li>
+                <b>Ascon</b> (Ganador de CAESAR Competition 2019)
+                <ul>
+                  <li>Diseñado para dispositivos con recursos limitados</li>
+                  <li>
+                    Modo AEAD integrado (confidencialidad + autenticación)
+                  </li>
+                  <li>Ideal para IoT, sensores, y hardware ligero</li>
+                </ul>
+              </li>
+              <li><b>PRESENT</b> - Block cipher ligero de 64 bits</li>
+              <li>
+                <b>SIMON y SPECK</b> - Familia de block ciphers de la NSA para
+                dispositivos limitados
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Contexto Post-Cuántico</h3>
+            <ul>
+              <li>
+                <b>Buenas noticias:</b> Los cifrados simétricos como AES son
+                <b>resistentes a computación cuántica</b>
+              </li>
+              <li>
+                El algoritmo de Grover reduce la seguridad a la mitad:
+                <ul>
+                  <li>AES-128 → seguridad de 64 bits (insuficiente)</li>
+                  <li>
+                    <b>AES-256 → seguridad de 128 bits</b> (suficiente para era
+                    post-cuántica)
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Recomendación NIST: Usar <b>AES-256</b> para protección a largo
+                plazo
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- Modos de Operación -->
+        <section>
+          <h2><a href="./algoritmos.html">Modos de Operación</a></h2>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize();
+    </script>
+  </body>
+</html>
