@@ -56,6 +56,14 @@ export const presentations = [
     active: true,
   },
   {
+    title: "Modos AES ",
+    description: "Modos de operación AES",
+    path: "temas/simetricos/block/aes_modes/index.html",
+    image: "temas/simetricos/assets/aes_modos.png",
+    active: true,
+  },
+
+  {
     title: "Cifrados Asimétricos",
     description: "Introducción a los cifrados asimétricos",
     path: "temas/asimetricos/index.html",

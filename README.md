@@ -26,8 +26,8 @@ CIFRADOS 2026 es un repositorio diseñado para la gestión de material del curso
 1. Clona este repositorio e instala las dependencias:
 
     ```bash
-    git clone https://github.com/locano-uvg/stw-25.git
-    cd stw-25
+    git clone https://github.com/locano-uvg/stw-26.git
+    cd stw-26
     ```
 
 2. Para que los ejercicios y ejemplos funcionen correctamente, muchas veces sera necesario configurar variables de entorno en un archivo `.env`
