@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modos de Cifrado AES — El Experimento Tux</title>
+  <style>
+    /* ── Variables ── */
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --card:     #1c2230;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --red:      #f85149;
+      --purple:   #bc8cff;
+      --orange:   #ffa657;
+      --teal:     #39d353;
+      --ecb-col:  #f85149;
+      --cbc-col:  #58a6ff;
+      --ctr-col:  #3fb950;
+      --radius:   12px;
+      --mono:     "Fira Code", "Cascadia Code", "Consolas", monospace;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: var(--mono); }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; gap: 2rem;
+      height: 56px;
+    }
+    nav .brand { font-weight: 700; font-size: 1rem; color: var(--text); white-space: nowrap; }
+    nav .brand span { color: var(--accent); }
+    nav ul { display: flex; gap: 1.5rem; list-style: none; flex-wrap: wrap; }
+    nav ul li a { color: var(--muted); font-size: .875rem; transition: color .2s; }
+    nav ul li a:hover { color: var(--text); text-decoration: none; }
+    nav ul li a.ecb { color: var(--ecb-col); }
+    nav ul li a.cbc { color: var(--cbc-col); }
+    nav ul li a.ctr { color: var(--ctr-col); }
+
+    /* ── Utilities ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+    .badge {
+      display: inline-block; padding: .2em .65em; border-radius: 20px;
+      font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    }
+    .badge-ecb { background: rgba(248,81,73,.15); color: var(--ecb-col); border: 1px solid rgba(248,81,73,.35); }
+    .badge-cbc { background: rgba(88,166,255,.15); color: var(--cbc-col); border: 1px solid rgba(88,166,255,.35); }
+    .badge-ctr { background: rgba(63,185,80,.15); color: var(--ctr-col); border: 1px solid rgba(63,185,80,.35); }
+    .badge-orig { background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.35); }
+    .section-label {
+      font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: .5rem;
+    }
+    h1, h2, h3, h4 { line-height: 1.25; }
+    .tag-dangerous { color: var(--red); font-weight: 600; }
+    .tag-safe { color: var(--green); font-weight: 600; }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(88,166,255,.12) 0%, transparent 60%);
+    }
+    #hero .kicker { color: var(--muted); font-size: .875rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 1rem; }
+    #hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800;
+      background: linear-gradient(135deg, #e6edf3 30%, #58a6ff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 1.25rem;
+    }
+    #hero p { max-width: 600px; margin: 0 auto 2rem; color: var(--muted); font-size: 1.05rem; }
+    .btn {
+      display: inline-block; padding: .65rem 1.4rem; border-radius: 8px;
+      font-size: .9rem; font-weight: 600; transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-primary:hover { background: #82b8ff; text-decoration: none; }
+    .btn-outline { border: 1px solid var(--border); color: var(--text); margin-left: .75rem; }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+    /* ── Sections ── */
+    section { padding: 4.5rem 0; border-top: 1px solid var(--border); }
+    section h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
+    section > .container > p.lead {
+      color: var(--muted); max-width: 720px; margin-bottom: 2.5rem; font-size: 1rem;
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      border-left: 4px solid; margin: 1.25rem 0; font-size: .9rem;
+    }
+    .callout-info   { background: rgba(88,166,255,.08);  border-color: var(--accent); }
+    .callout-warn   { background: rgba(210,153,34,.08);  border-color: var(--yellow); }
+    .callout-danger { background: rgba(248,81,73,.08);   border-color: var(--red); }
+    .callout-ok     { background: rgba(63,185,80,.08);   border-color: var(--green); }
+    .callout strong { display: block; margin-bottom: .25rem; }
+
+    /* ── PPM experiment ── */
+    .ppm-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;
+      margin: 2rem 0;
+    }
+    @media(max-width:700px){ .ppm-layout { grid-template-columns: 1fr; } }
+    .ppm-diagram {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem; font-family: var(--mono); font-size: .8rem;
+    }
+    .ppm-diagram .line { padding: .2rem .6rem; border-radius: 4px; margin: .18rem 0; display: flex; align-items: center; gap: .5rem; }
+    .ppm-diagram .line .lnum { color: var(--muted); min-width: 1.5rem; text-align: right; user-select: none; }
+    .ppm-line-magic    { background: rgba(188,140,255,.12); color: var(--purple); }
+    .ppm-line-dims     { background: rgba(88,166,255,.12);  color: var(--accent); }
+    .ppm-line-maxval   { background: rgba(63,185,80,.12);   color: var(--green); }
+    .ppm-line-body     { background: rgba(248,81,73,.12);   color: var(--muted); }
+    .ppm-arrow {
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      font-size: .8rem; color: var(--muted); margin: .75rem 0;
+    }
+    .ppm-legend { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .ppm-chip {
+      padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 600;
+      display: flex; align-items: center; gap: .35rem;
+    }
+    .ppm-chip-head { background: rgba(188,140,255,.15); color: var(--purple); }
+    .ppm-chip-body { background: rgba(248,81,73,.15);   color: var(--red); }
+
+    /* ── Image Gallery ── */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin: 2rem 0;
+    }
+    @media(max-width:900px){ .gallery { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:500px){ .gallery { grid-template-columns: 1fr; } }
+    .gallery-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      transition: transform .2s, border-color .2s;
+    }
+    .gallery-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .gallery-card canvas, .gallery-card img {
+      width: 100%; display: block; image-rendering: pixelated;
+    }
+    .gallery-card .caption {
+      padding: .75rem 1rem;
+    }
+    .gallery-card .caption .title { font-weight: 600; font-size: .9rem; margin-bottom: .25rem; }
+    .gallery-card .caption .desc  { font-size: .78rem; color: var(--muted); }
+    .gallery-loader {
+      display: flex; align-items: center; justify-content: center;
+      height: 140px; color: var(--muted); font-size: .8rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    /* ── Mode section layout ── */
+    .mode-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;
+      margin: 2rem 0;
+    }
+    @media(max-width:800px){ .mode-layout { grid-template-columns: 1fr; } }
+
+    /* ── Diagram wrapper ── */
+    .diagram-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+    }
+    .diagram-title {
+      font-size: .75rem; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted); margin-bottom: 1rem; font-weight: 600;
+    }
+
+    /* ── Step animations (shared) ── */
+    .step-btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .45rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); cursor: pointer;
+      font-size: .82rem; font-weight: 500; transition: all .15s;
+      margin-top: 1rem;
+    }
+    .step-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .step-btn:active { transform: scale(.97); }
+    .step-counter { color: var(--muted); font-size: .78rem; margin-top: .5rem; }
+
+    /* ── SVG diagram base ── */
+    .cipher-svg { width: 100%; overflow: visible; }
+    .cipher-svg text { font-family: var(--mono); }
+
+    /* ── Block highlights (JS toggled) ── */
+    .blk { transition: fill .35s, stroke .35s, opacity .35s; }
+    .blk-active { filter: drop-shadow(0 0 6px currentColor); }
+
+    /* ── Code block ── */
+    .code-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin: 1.25rem 0;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .55rem 1rem; background: var(--card);
+      border-bottom: 1px solid var(--border); font-size: .8rem;
+    }
+    .code-header .fname { color: var(--muted); font-family: var(--mono); }
+    .copy-btn {
+      padding: .2rem .6rem; border-radius: 5px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer; font-size: .75rem;
+      transition: all .15s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    pre {
+      padding: 1.1rem 1.25rem; overflow-x: auto; font-size: .82rem; line-height: 1.65;
+    }
+    /* minimal syntax highlight */
+    .k  { color: #ff7b72; }   /* keyword */
+    .s  { color: #a5d6ff; }   /* string */
+    .c  { color: #8b949e; font-style: italic; }  /* comment */
+    .f  { color: #d2a8ff; }   /* function */
+    .n  { color: #79c0ff; }   /* class/type */
+    .p  { color: var(--text); }  /* plain */
+    .num { color: var(--orange); }
+
+    /* ── Comparison table ── */
+    .compare-table {
+      width: 100%; border-collapse: collapse; font-size: .875rem;
+      margin: 2rem 0;
+    }
+    .compare-table th {
+      padding: .65rem 1rem; background: var(--card);
+      border: 1px solid var(--border); text-align: left; font-weight: 600;
+    }
+    .compare-table td {
+      padding: .6rem 1rem; border: 1px solid var(--border); color: var(--muted);
+    }
+    .compare-table tr:hover td { background: rgba(255,255,255,.02); }
+    .compare-table td:first-child { color: var(--text); font-weight: 500; font-family: var(--mono); font-size: .8rem; }
+    .check { color: var(--green); }
+    .cross { color: var(--red); }
+    .warn  { color: var(--yellow); }
+
+    /* ── Progress bar for pixel demo ── */
+    .pixel-demo { margin: 1.5rem 0; }
+    .pixel-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: .75rem; }
+    .px-block {
+      width: 36px; height: 36px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .6rem; font-family: var(--mono); color: #000; font-weight: 700;
+      transition: all .4s; cursor: pointer; border: 2px solid transparent;
+      user-select: none;
+    }
+    .px-block:hover { transform: scale(1.08); }
+    .px-block.selected { border-color: white; transform: scale(1.12); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 2.5rem 1.5rem;
+      text-align: center; color: var(--muted); font-size: .82rem;
+    }
+    footer .credits { margin-top: .5rem; }
+
+    /* ── Scroll reveal ── */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .55s, transform .55s; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab-btn {
+      padding: .6rem 1.1rem; background: transparent; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); cursor: pointer; font-size: .875rem; font-weight: 500; transition: all .2s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ NAV ══════════════ -->
+<nav>
+  <div class="brand">AES&nbsp;<span>Modos</span></div>
+  <ul>
+    <li><a href="#experimento">El Experimento</a></li>
+    <li><a href="#galeria">Galería</a></li>
+    <li><a href="#ecb" class="ecb">ECB</a></li>
+    <li><a href="#cbc" class="cbc">CBC</a></li>
+    <li><a href="#ctr" class="ctr">CTR</a></li>
+    <li><a href="#codigo">Código</a></li>
+    <li><a href="#resumen">Resumen</a></li>
+  </ul>
+</nav>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section id="hero">
+  <div class="kicker">Cifrado de bloques · AES · Laboratorio visual</div>
+  <h1>El Experimento Tux</h1>
+  <p>¿Por qué ECB es inseguro aunque use AES? Descúbrelo cifrando la imagen del pingüino Linux con tres modos distintos.</p>
+  <a href="#experimento" class="btn btn-primary">Empezar</a>
+  <a href="#galeria" class="btn btn-outline">Ver imágenes</a>
+</section>
+
+<!-- ══════════════ EL EXPERIMENTO ══════════════ -->
+<section id="experimento">
+  <div class="container">
+    <div class="section-label reveal">¿Qué estamos haciendo?</div>
+    <h2 class="reveal">El truco del formato PPM</h2>
+    <p class="lead reveal">
+      Las imágenes <strong>PPM</strong> almacenan píxeles como bytes RGB sin comprimir. Si ciframos <em>solo el cuerpo</em> pero conservamos el encabezado original, cualquier visor de imágenes puede abrir el resultado. Lo que se vea —o no se vea— revela la calidad del cifrado.
+    </p>
+
+    <div class="ppm-layout reveal">
+      <!-- PPM structure diagram -->
+      <div>
+        <div class="ppm-diagram">
+          <div class="section-label" style="margin-bottom:.75rem;">Estructura de un archivo PPM</div>
+          <div class="line ppm-line-magic">
+            <span class="lnum">1</span>
+            <span>P6</span>
+            <span style="color:var(--muted);margin-left:auto;font-size:.75em">← Formato binario</span>
+          </div>
+          <div class="line ppm-line-dims">
+            <span class="lnum">2</span>
+            <span>265&nbsp;314</span>
+            <span style="color:var(--muted);margin-left:auto;font-size:.75em">← Ancho × Alto</span>
+          </div>
+          <div class="line ppm-line-maxval">
+            <span class="lnum">3</span>
+            <span>255</span>
+            <span style="color:var(--muted);margin-left:auto;font-size:.75em">← Valor máximo</span>
+          </div>
+          <div class="line ppm-line-body" style="height:52px;opacity:.7;">
+            <span class="lnum">—</span>
+            <span>FF 4A 1C 80 22 ... (píxeles RGB)</span>
+          </div>
+          <div class="ppm-arrow">
+            <span style="color:var(--purple)">◀ Conservamos</span>
+            &nbsp;&#124;&nbsp;
+            <span style="color:var(--red)">Ciframos ▶</span>
+          </div>
+          <div class="ppm-legend">
+            <span class="ppm-chip ppm-chip-head">⬡ Encabezado → intacto</span>
+            <span class="ppm-chip ppm-chip-body">⬡ Cuerpo → cifrado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why this reveals cipher quality -->
+      <div>
+        <div class="callout callout-info">
+          <strong>¿Por qué es un buen banco de pruebas?</strong>
+          Una imagen real tiene zonas homogéneas (fondo uniforme, colores sólidos). Esos bloques de píxeles repetidos son exactamente lo que un modo débil como ECB no puede esconder.
+        </div>
+        <div class="callout callout-warn">
+          <strong>Un cifrado seguro debe verse como ruido</strong>
+          Si después del cifrado aún se puede identificar la forma del objeto, el modo falló en ocultar el patrón estadístico del mensaje original.
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-top:1rem;">
+          <div class="section-label" style="margin-bottom:.5rem;">Pipeline del experimento</div>
+          <div style="font-family:var(--mono);font-size:.78rem;line-height:2;">
+            <span style="color:var(--purple)">tux.jpg</span>
+            <span style="color:var(--muted)"> → convertir PPM →</span>
+            <span style="color:var(--accent)"> split(header, body)</span>
+            <span style="color:var(--muted)"> →</span>
+            <span style="color:var(--red)"> AES-ECB(body)</span>
+            <br>
+            <span style="opacity:0">tux.jpg → convertir PPM →</span>
+            <span style="color:var(--muted)"> →</span>
+            <span style="color:var(--cbc-col)"> AES-CBC(body)</span>
+            <br>
+            <span style="opacity:0">tux.jpg → convertir PPM →</span>
+            <span style="color:var(--muted)"> →</span>
+            <span style="color:var(--ctr-col)"> AES-CTR(body)</span>
+            <br>
+            <span style="color:var(--muted)"> write(header + cifrado)</span>
+            <span style="color:var(--muted)"> → .ppm visualizable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ GALERÍA ══════════════ -->
+<section id="galeria">
+  <div class="container">
+    <div class="section-label reveal">Resultados visuales</div>
+    <h2 class="reveal">Las cuatro imágenes lado a lado</h2>
+    <p class="lead reveal">
+      Las tres imágenes cifradas comparten la misma clave AES-128. Solo cambia el <em>modo de operación</em>. Observa qué tan bien cada uno oculta el contenido original.
+    </p>
+
+    <div class="gallery reveal" id="imageGallery">
+      <!-- Original -->
+      <div class="gallery-card">
+        <img src="../tux.jpg" alt="Tux original" id="img-original" />
+        <div class="caption">
+          <div class="title"><span class="badge badge-orig">Original</span></div>
+          <div class="desc">Imagen de referencia. Pingüino Linux sobre fondo transparente.</div>
+        </div>
+      </div>
+      <!-- ECB -->
+      <div class="gallery-card">
+        <canvas id="canvas-ecb"></canvas>
+        <div class="caption">
+          <div class="title"><span class="badge badge-ecb">ECB</span> Modo Inseguro</div>
+          <div class="desc">El contorno del pingüino sigue siendo visible. Los patrones no se ocultan.</div>
+        </div>
+      </div>
+      <!-- CBC -->
+      <div class="gallery-card">
+        <canvas id="canvas-cbc"></canvas>
+        <div class="caption">
+          <div class="title"><span class="badge badge-cbc">CBC</span> Modo Seguro</div>
+          <div class="desc">Ruido visual uniforme. Ningún patrón reconocible de la imagen original.</div>
+        </div>
+      </div>
+      <!-- CTR -->
+      <div class="gallery-card">
+        <canvas id="canvas-ctr"></canvas>
+        <div class="caption">
+          <div class="title"><span class="badge badge-ctr">CTR</span> Modo Seguro</div>
+          <div class="desc">También parece ruido, pero opera como cifrado de flujo. Sin padding.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gallery-status" style="text-align:center;color:var(--muted);font-size:.82rem;margin-top:.5rem;"></div>
+
+    <div class="callout callout-danger reveal" style="margin-top:1.5rem;">
+      <strong>La lección fundamental</strong>
+      ECB usa exactamente el mismo algoritmo AES que CBC y CTR. La clave es idéntica. La diferencia es <em>cómo se encadenan los bloques</em>. Un modo de operación deficiente convierte un cifrador fuerte en uno inseguro.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ECB ══════════════ -->
+<section id="ecb">
+  <div class="container">
+    <div class="section-label reveal" style="color:var(--ecb-col);">Modo de cifrado</div>
+    <h2 class="reveal"><span style="color:var(--ecb-col)">ECB</span> — Electronic Codebook</h2>
+    <p class="lead reveal">
+      Cada bloque de 16 bytes se cifra de manera completamente <strong>independiente</strong>. No hay memoria del bloque anterior. Esto lo hace el modo más simple de entender, y también el más peligroso.
+    </p>
+
+    <div class="mode-layout">
+      <!-- Diagram -->
+      <div class="diagram-wrap reveal">
+        <div class="diagram-title">Diagrama interactivo ECB — <span style="color:var(--ecb-col)">Presiona "Siguiente paso"</span></div>
+        <svg id="svg-ecb" class="cipher-svg" viewBox="0 0 380 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Titles -->
+          <text x="10"  y="18" fill="#8b949e" font-size="9" font-family="monospace">Plaintext</text>
+          <text x="10" y="265" fill="#8b949e" font-size="9" font-family="monospace">Ciphertext</text>
+
+          <!-- Block 1 -->
+          <g id="ecb-g1">
+            <rect id="ecb-p1" x="10"  y="22" width="80" height="28" rx="5" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="50"  y="41" text-anchor="middle" fill="#bc8cff" font-size="9" font-family="monospace">P1 (16B)</text>
+            <line id="ecb-a1" x1="50" y1="50" x2="50" y2="80" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-b1" x="10"  y="80" width="80" height="40" rx="6" fill="rgba(248,81,73,.12)" stroke="#f85149" stroke-width="1.5"/>
+            <text x="50"  y="96" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">AES</text>
+            <text x="50" y="110" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">Encrypt</text>
+            <line id="ecb-a1b" x1="50" y1="120" x2="50" y2="148" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-c1" x="10" y="148" width="80" height="28" rx="5" fill="rgba(248,81,73,.15)" stroke="#f85149" stroke-width="1.5"/>
+            <text x="50" y="167" text-anchor="middle" fill="#f85149" font-size="9" font-family="monospace">C1 (16B)</text>
+          </g>
+
+          <!-- Block 2 -->
+          <g id="ecb-g2">
+            <rect id="ecb-p2" x="150" y="22" width="80" height="28" rx="5" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="190" y="41" text-anchor="middle" fill="#bc8cff" font-size="9" font-family="monospace">P2 (16B)</text>
+            <line x1="190" y1="50" x2="190" y2="80" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-b2" x="150" y="80" width="80" height="40" rx="6" fill="rgba(248,81,73,.12)" stroke="#f85149" stroke-width="1.5"/>
+            <text x="190" y="96" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">AES</text>
+            <text x="190" y="110" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">Encrypt</text>
+            <line x1="190" y1="120" x2="190" y2="148" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-c2" x="150" y="148" width="80" height="28" rx="5" fill="rgba(248,81,73,.15)" stroke="#f85149" stroke-width="1.5"/>
+            <text x="190" y="167" text-anchor="middle" fill="#f85149" font-size="9" font-family="monospace">C2 (16B)</text>
+          </g>
+
+          <!-- Block 3 identical to block 1 -->
+          <g id="ecb-g3">
+            <rect id="ecb-p3" x="290" y="22" width="80" height="28" rx="5" fill="rgba(188,140,255,.35)" stroke="#bc8cff" stroke-width="2" stroke-dasharray="0"/>
+            <text x="330" y="33" text-anchor="middle" fill="#bc8cff" font-size="9" font-family="monospace">P3 = P1</text>
+            <text x="330" y="44" text-anchor="middle" fill="#bc8cff" font-size="7.5" font-family="monospace">(idéntico)</text>
+            <line x1="330" y1="50" x2="330" y2="80" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-b3" x="290" y="80" width="80" height="40" rx="6" fill="rgba(248,81,73,.12)" stroke="#f85149" stroke-width="1.5"/>
+            <text x="330" y="96" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">AES</text>
+            <text x="330" y="110" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace">Encrypt</text>
+            <line x1="330" y1="120" x2="330" y2="148" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4"/>
+            <rect id="ecb-c3" x="290" y="148" width="80" height="28" rx="5" fill="rgba(248,81,73,.35)" stroke="#f85149" stroke-width="2"/>
+            <text x="330" y="159" text-anchor="middle" fill="#f85149" font-size="9" font-family="monospace">C3 = C1</text>
+            <text x="330" y="170" text-anchor="middle" fill="#f85149" font-size="7.5" font-family="monospace">(idéntico)</text>
+          </g>
+
+          <!-- No connection arrows = independent -->
+          <text x="100" y="105" fill="#8b949e" font-size="18" opacity=".25">···</text>
+          <text x="233" y="105" fill="#8b949e" font-size="18" opacity=".25">···</text>
+
+          <!-- ECB warning annotation -->
+          <rect id="ecb-warn-box" x="95" y="185" width="190" height="52" rx="6" fill="rgba(248,81,73,.08)" stroke="#f85149" stroke-width="1" opacity="0"/>
+          <text id="ecb-warn-t1" x="190" y="203" text-anchor="middle" fill="#f85149" font-size="8.5" font-family="monospace" opacity="0">⚠ P1 = P3 → C1 = C3</text>
+          <text id="ecb-warn-t2" x="190" y="217" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace" opacity="0">Bloques idénticos producen</text>
+          <text id="ecb-warn-t3" x="190" y="229" text-anchor="middle" fill="#f85149" font-size="8" font-family="monospace" opacity="0">ciphertext idéntico → patrón visible</text>
+
+          <!-- Key shared -->
+          <text x="190" y="258" text-anchor="middle" fill="#8b949e" font-size="8" font-family="monospace">Clave K compartida por todos los bloques</text>
+        </svg>
+
+        <button class="step-btn" id="ecb-step-btn" onclick="stepECB()">▶ Siguiente paso</button>
+        <div class="step-counter" id="ecb-step-label">Paso 0 / 4</div>
+      </div>
+
+      <!-- Explanation text -->
+      <div class="reveal">
+        <h3 style="margin-bottom:1rem;">¿Por qué ECB falla?</h3>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+          ECB aplica AES directamente a cada bloque de 16 bytes de manera <em>independiente</em>. Significa que dos bloques con el mismo contenido producen exactamente el mismo bloque cifrado.
+        </p>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+          En una imagen, los píxeles del fondo son uniformes: miles de bloques de 16 bytes idénticos. Cuando se cifran con ECB todos producen el mismo ciphertext, preservando la estructura visual.
+        </p>
+
+        <div class="callout callout-danger">
+          <strong>ECB no es semánticamente seguro</strong>
+          Un atacante puede distinguir si dos bloques de la imagen tienen el mismo contenido simplemente comparando el ciphertext, sin conocer la clave.
+        </div>
+
+        <h4 style="margin:.9rem 0 .4rem;">Fórmula ECB</h4>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-family:var(--mono);font-size:.85rem;">
+          <div style="color:var(--red);">C<sub>i</sub> = AES<sub>K</sub>(P<sub>i</sub>)</div>
+          <div style="color:var(--muted);font-size:.75rem;margin-top:.35rem;">Sin estado. Sin dependencias entre bloques.</div>
+        </div>
+
+        <!-- Interactive pixel demo -->
+        <div class="pixel-demo" style="margin-top:1.25rem;">
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem;">Haz clic en un bloque para ver duplicados:</div>
+          <div class="pixel-row" id="ecb-pixel-row"></div>
+          <div id="ecb-pixel-info" style="font-size:.75rem;color:var(--muted);min-height:1.2em;margin-top:.25rem;font-family:var(--mono);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CBC ══════════════ -->
+<section id="cbc">
+  <div class="container">
+    <div class="section-label reveal" style="color:var(--cbc-col);">Modo de cifrado</div>
+    <h2 class="reveal"><span style="color:var(--cbc-col)">CBC</span> — Cipher Block Chaining</h2>
+    <p class="lead reveal">
+      Antes de cifrar cada bloque, se hace un <strong>XOR</strong> con el bloque cifrado anterior. El primer bloque usa un <em>Vector de Inicialización</em> (IV) aleatorio. Esto rompe cualquier patrón estadístico.
+    </p>
+
+    <div class="mode-layout">
+      <!-- Diagram -->
+      <div class="diagram-wrap reveal">
+        <div class="diagram-title">Diagrama interactivo CBC — <span style="color:var(--cbc-col)">Presiona "Siguiente paso"</span></div>
+        <svg id="svg-cbc" class="cipher-svg" viewBox="0 0 380 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- IV -->
+          <rect id="cbc-iv" x="10" y="10" width="60" height="24" rx="4" fill="rgba(255,166,87,.15)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="40" y="26" text-anchor="middle" fill="#ffa657" font-size="8" font-family="monospace">IV (rand)</text>
+
+          <!-- Block 1 -->
+          <rect id="cbc-p1" x="10" y="55" width="60" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="40" y="71" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P1</text>
+          <!-- XOR 1 -->
+          <line x1="40" y1="34" x2="40" y2="50" stroke="#ffa657" stroke-width="1.5"/>
+          <line x1="40" y1="79" x2="40" y2="94" stroke="#ffa657" stroke-width="1.5"/>
+          <circle id="cbc-xor1" cx="40" cy="94" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="40" y="98" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+          <!-- AES 1 -->
+          <line x1="40" y1="103" x2="40" y2="120" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-a1" x="10" y="120" width="60" height="36" rx="5" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="40" y="135" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">AES</text>
+          <text x="40" y="147" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">Encrypt</text>
+          <!-- C1 -->
+          <line x1="40" y1="156" x2="40" y2="176" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-c1" x="10" y="176" width="60" height="24" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="40" y="192" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">C1</text>
+
+          <!-- Chain arrow C1 → XOR2 -->
+          <path id="cbc-chain1" d="M70 188 Q120 188 120 94" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4"/>
+
+          <!-- Block 2 -->
+          <rect id="cbc-p2" x="150" y="55" width="60" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="180" y="71" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P2</text>
+          <line x1="180" y1="79" x2="180" y2="94" stroke="#ffa657" stroke-width="1.5"/>
+          <circle id="cbc-xor2" cx="120" cy="94" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="120" y="98" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+          <line x1="120" y1="79" x2="180" y2="79" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2"/>
+          <line x1="120" y1="103" x2="150" y2="103" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-a2" x="150" y="103" width="60" height="36" rx="5" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="180" y="118" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">AES</text>
+          <text x="180" y="130" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">Encrypt</text>
+          <line x1="180" y1="139" x2="180" y2="176" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-c2" x="150" y="176" width="60" height="24" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="180" y="192" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">C2</text>
+
+          <!-- Chain arrow C2 → XOR3 -->
+          <path id="cbc-chain2" d="M210 188 Q255 188 255 94" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4"/>
+
+          <!-- Block 3 -->
+          <rect id="cbc-p3" x="285" y="55" width="60" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="315" y="71" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P3</text>
+          <line x1="315" y1="79" x2="315" y2="94" stroke="#ffa657" stroke-width="1.5"/>
+          <circle id="cbc-xor3" cx="255" cy="94" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="255" y="98" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+          <line x1="255" y1="79" x2="315" y2="79" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2"/>
+          <line x1="255" y1="103" x2="285" y2="103" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-a3" x="285" y="103" width="60" height="36" rx="5" fill="rgba(88,166,255,.1)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="315" y="118" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">AES</text>
+          <text x="315" y="130" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">Encrypt</text>
+          <line x1="315" y1="139" x2="315" y2="176" stroke="#58a6ff" stroke-width="1.5"/>
+          <rect id="cbc-c3" x="285" y="176" width="60" height="24" rx="4" fill="rgba(88,166,255,.2)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="315" y="192" text-anchor="middle" fill="#58a6ff" font-size="8" font-family="monospace">C3</text>
+
+          <!-- Labels -->
+          <text x="10" y="250" fill="#8b949e" font-size="8" font-family="monospace">Nota: P1=P3 → C1 ≠ C3  (porque C0=IV ≠ C2)</text>
+          <text x="10" y="265" fill="#3fb950" font-size="8" font-family="monospace">✓ Mismo mensaje, diferente contexto → diferente ciphertext</text>
+          <text x="10" y="280" fill="#8b949e" font-size="8" font-family="monospace">Clave K compartida por todos los bloques</text>
+        </svg>
+
+        <button class="step-btn" id="cbc-step-btn" onclick="stepCBC()">▶ Siguiente paso</button>
+        <div class="step-counter" id="cbc-step-label">Paso 0 / 5</div>
+      </div>
+
+      <!-- Explanation -->
+      <div class="reveal">
+        <h3 style="margin-bottom:1rem;">¿Por qué CBC funciona mejor?</h3>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+          El XOR con el bloque anterior introduce <em>dependencia de contexto</em>. Aunque dos bloques de plaintext sean idénticos, su posición en la cadena les da un ciphertext diferente.
+        </p>
+
+        <div class="callout callout-ok">
+          <strong>El IV garantiza unicidad</strong>
+          El Vector de Inicialización debe ser aleatorio y único por mensaje. Así dos cifrados del mismo plaintext con la misma clave producen ciphertexts completamente diferentes.
+        </div>
+
+        <div class="callout callout-warn" style="margin-top:.75rem;">
+          <strong>Limitaciones de CBC</strong>
+          El procesamiento es <em>secuencial</em>: no se puede paralelizar el cifrado porque cada bloque depende del anterior. Además es susceptible a ataques de padding oracle si no se implementa con cuidado.
+        </div>
+
+        <h4 style="margin:.9rem 0 .4rem;">Fórmula CBC</h4>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-family:var(--mono);font-size:.85rem;line-height:1.8;">
+          <div style="color:var(--cbc-col);">C<sub>i</sub> = AES<sub>K</sub>(P<sub>i</sub> ⊕ C<sub>i-1</sub>)</div>
+          <div style="color:var(--orange);">C<sub>0</sub> = IV <span style="color:var(--muted);font-size:.75rem;"> (aleatorio)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CTR ══════════════ -->
+<section id="ctr">
+  <div class="container">
+    <div class="section-label reveal" style="color:var(--ctr-col);">Modo de cifrado</div>
+    <h2 class="reveal"><span style="color:var(--ctr-col)">CTR</span> — Counter Mode</h2>
+    <p class="lead reveal">
+      CTR convierte AES en un <strong>cifrado de flujo</strong>. No cifra el plaintext directamente; cifra un contador incrementado secuencialmente y luego hace XOR con el plaintext. No necesita padding.
+    </p>
+
+    <div class="mode-layout">
+      <!-- Diagram -->
+      <div class="diagram-wrap reveal">
+        <div class="diagram-title">Diagrama interactivo CTR — <span style="color:var(--ctr-col)">Presiona "Siguiente paso"</span></div>
+        <svg id="svg-ctr" class="cipher-svg" viewBox="0 0 380 290" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Counter blocks -->
+          <rect id="ctr-n1" x="10"  y="10" width="80" height="24" rx="4" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="50"  y="26" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Nonce ∥ CTR=1</text>
+          <rect id="ctr-n2" x="150" y="10" width="80" height="24" rx="4" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="190" y="26" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Nonce ∥ CTR=2</text>
+          <rect id="ctr-n3" x="290" y="10" width="80" height="24" rx="4" fill="rgba(63,185,80,.15)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="330" y="26" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Nonce ∥ CTR=3</text>
+
+          <!-- AES blocks -->
+          <line x1="50"  y1="34" x2="50"  y2="55" stroke="#3fb950" stroke-width="1.5"/>
+          <line x1="190" y1="34" x2="190" y2="55" stroke="#3fb950" stroke-width="1.5"/>
+          <line x1="330" y1="34" x2="330" y2="55" stroke="#3fb950" stroke-width="1.5"/>
+          <rect id="ctr-a1" x="10"  y="55" width="80" height="36" rx="5" fill="rgba(63,185,80,.1)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="50"  y="70" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">AES</text>
+          <text x="50"  y="82" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Encrypt</text>
+          <rect id="ctr-a2" x="150" y="55" width="80" height="36" rx="5" fill="rgba(63,185,80,.1)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="190" y="70" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">AES</text>
+          <text x="190" y="82" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Encrypt</text>
+          <rect id="ctr-a3" x="290" y="55" width="80" height="36" rx="5" fill="rgba(63,185,80,.1)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="330" y="70" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">AES</text>
+          <text x="330" y="82" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">Encrypt</text>
+
+          <!-- Keystream -->
+          <line x1="50"  y1="91" x2="50"  y2="110" stroke="#39d353" stroke-width="1.5"/>
+          <line x1="190" y1="91" x2="190" y2="110" stroke="#39d353" stroke-width="1.5"/>
+          <line x1="330" y1="91" x2="330" y2="110" stroke="#39d353" stroke-width="1.5"/>
+          <rect id="ctr-k1" x="10"  y="110" width="80" height="24" rx="4" fill="rgba(57,211,83,.1)" stroke="#39d353" stroke-width="1.5"/>
+          <text x="50"  y="126" text-anchor="middle" fill="#39d353" font-size="8" font-family="monospace">K₁ (keystream)</text>
+          <rect id="ctr-k2" x="150" y="110" width="80" height="24" rx="4" fill="rgba(57,211,83,.1)" stroke="#39d353" stroke-width="1.5"/>
+          <text x="190" y="126" text-anchor="middle" fill="#39d353" font-size="8" font-family="monospace">K₂ (keystream)</text>
+          <rect id="ctr-k3" x="290" y="110" width="80" height="24" rx="4" fill="rgba(57,211,83,.1)" stroke="#39d353" stroke-width="1.5"/>
+          <text x="330" y="126" text-anchor="middle" fill="#39d353" font-size="8" font-family="monospace">K₃ (keystream)</text>
+
+          <!-- XOR -->
+          <line x1="50"  y1="134" x2="50"  y2="149" stroke="#39d353" stroke-width="1.5"/>
+          <line x1="190" y1="134" x2="190" y2="149" stroke="#39d353" stroke-width="1.5"/>
+          <line x1="330" y1="134" x2="330" y2="149" stroke="#39d353" stroke-width="1.5"/>
+          <circle id="ctr-xor1" cx="50"  cy="149" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="50"  y="153" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+          <circle id="ctr-xor2" cx="190" cy="149" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="190" y="153" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+          <circle id="ctr-xor3" cx="330" cy="149" r="9" fill="rgba(255,166,87,.1)" stroke="#ffa657" stroke-width="1.5"/>
+          <text x="330" y="153" text-anchor="middle" fill="#ffa657" font-size="12" font-family="monospace">⊕</text>
+
+          <!-- Plaintext feed -->
+          <rect id="ctr-p1" x="10"  y="182" width="80" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="50"  y="198" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P1</text>
+          <line x1="50"  y1="182" x2="50"  y2="158" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="3"/>
+          <rect id="ctr-p2" x="150" y="182" width="80" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="190" y="198" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P2</text>
+          <line x1="190" y1="182" x2="190" y2="158" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="3"/>
+          <rect id="ctr-p3" x="290" y="182" width="80" height="24" rx="4" fill="rgba(188,140,255,.15)" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="330" y="198" text-anchor="middle" fill="#bc8cff" font-size="8" font-family="monospace">P3</text>
+          <line x1="330" y1="182" x2="330" y2="158" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="3"/>
+
+          <!-- Output -->
+          <line x1="50"  y1="158" x2="50"  y2="230" stroke="#3fb950" stroke-width="1.5"/>
+          <line x1="190" y1="158" x2="190" y2="230" stroke="#3fb950" stroke-width="1.5"/>
+          <line x1="330" y1="158" x2="330" y2="230" stroke="#3fb950" stroke-width="1.5"/>
+          <rect id="ctr-c1" x="10"  y="230" width="80" height="24" rx="4" fill="rgba(63,185,80,.2)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="50"  y="246" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">C1</text>
+          <rect id="ctr-c2" x="150" y="230" width="80" height="24" rx="4" fill="rgba(63,185,80,.2)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="190" y="246" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">C2</text>
+          <rect id="ctr-c3" x="290" y="230" width="80" height="24" rx="4" fill="rgba(63,185,80,.2)" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="330" y="246" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">C3</text>
+
+          <text x="10" y="278" fill="#8b949e" font-size="8" font-family="monospace">⚡ Todos los bloques pueden cifrarse en PARALELO</text>
+        </svg>
+
+        <button class="step-btn" id="ctr-step-btn" onclick="stepCTR()">▶ Siguiente paso</button>
+        <div class="step-counter" id="ctr-step-label">Paso 0 / 4</div>
+      </div>
+
+      <!-- Explanation -->
+      <div class="reveal">
+        <h3 style="margin-bottom:1rem;">CTR: lo mejor de dos mundos</h3>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">
+          CTR genera un <em>keystream</em> cifrando valores de contador sucesivos. El plaintext nunca entra directamente al núcleo AES — solo el contador lo hace. El XOR final convierte AES en un cifrado de flujo.
+        </p>
+
+        <div class="callout callout-ok">
+          <strong>Paralelizable</strong>
+          A diferencia de CBC, todos los bloques del keystream se pueden generar de forma independiente y simultánea. Ideal para hardware con múltiples cores.
+        </div>
+
+        <div class="callout callout-info" style="margin-top:.75rem;">
+          <strong>Sin padding</strong>
+          Como el keystream se genera con la misma longitud que el mensaje, no se necesita completar el último bloque. El ciphertext tiene exactamente el mismo tamaño que el plaintext.
+        </div>
+
+        <div class="callout callout-warn" style="margin-top:.75rem;">
+          <strong>Nonce único es crítico</strong>
+          Si se reutiliza el mismo nonce+clave con dos mensajes distintos, el XOR de ambos ciphertexts revela el XOR de los plaintexts — ataque devastador.
+        </div>
+
+        <h4 style="margin:.9rem 0 .4rem;">Fórmula CTR</h4>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-family:var(--mono);font-size:.85rem;line-height:1.8;">
+          <div style="color:var(--ctr-col);">C<sub>i</sub> = P<sub>i</sub> ⊕ AES<sub>K</sub>(Nonce ∥ i)</div>
+          <div style="color:var(--muted);font-size:.75rem;margin-top:.25rem;">AES solo cifra el contador. El plaintext nunca entra al bloque AES.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CÓDIGO ══════════════ -->
+<section id="codigo">
+  <div class="container">
+    <div class="section-label reveal">Implementación</div>
+    <h2 class="reveal">El código fuente</h2>
+    <p class="lead reveal">
+      Tres funciones, tres comportamientos radicalmente distintos. La biblioteca <code>pycryptodome</code> maneja los detalles de bajo nivel de AES.
+    </p>
+
+    <div class="tabs reveal">
+      <button class="tab-btn active" onclick="switchTab(event,'tab-split')">split_head_body.py</button>
+      <button class="tab-btn" onclick="switchTab(event,'tab-modes')">aes_encrypt_modes.py</button>
+      <button class="tab-btn" onclick="switchTab(event,'tab-main')">encriptar_AES.py</button>
+    </div>
+
+    <!-- split_head_body -->
+    <div class="tab-panel active reveal" id="tab-split">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="fname">split_head_body_img.py</span>
+          <button class="copy-btn" onclick="copyCode('code-split')">Copiar</button>
+        </div>
+        <pre id="code-split"><span class="k">def</span> <span class="f">split_head_body</span><span class="p">(image_path: </span><span class="n">str</span><span class="p">) -&gt; </span><span class="n">tuple</span><span class="p">[</span><span class="n">bytes</span><span class="p">, </span><span class="n">bytes</span><span class="p">]:</span>
+    <span class="k">with</span> <span class="f">open</span><span class="p">(image_path, </span><span class="s">"rb"</span><span class="p">) </span><span class="k">as</span><span class="p"> f:</span>
+        <span class="p">data = f.</span><span class="f">read</span><span class="p">()</span>
+    <span class="c"># PPM tiene un header de 3 líneas: formato, dimensiones, max color</span>
+    header_end <span class="p">= </span><span class="num">0</span>
+    <span class="k">for</span><span class="p"> _ </span><span class="k">in</span> <span class="f">range</span><span class="p">(</span><span class="num">3</span><span class="p">):</span>
+        header_end <span class="p">= data.</span><span class="f">index</span><span class="p">(</span><span class="s">b"\n"</span><span class="p">, header_end) + </span><span class="num">1</span>
+    <span class="k">return</span><span class="p"> data[:header_end], data[header_end:]</span></pre>
+      </div>
+      <div class="callout callout-info">
+        <strong>Concepto clave</strong>
+        Al separar el encabezado de los datos de píxeles, podemos cifrar solo el cuerpo y luego reconstruir un archivo PPM válido que cualquier visualizador puede abrir. El truco está en que el encabezado PPM define las dimensiones — sin él, los píxeles no tienen estructura.
+      </div>
+    </div>
+
+    <!-- aes_encrypt_modes -->
+    <div class="tab-panel reveal" id="tab-modes">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="fname">aes_encrypt_modes.py</span>
+          <button class="copy-btn" onclick="copyCode('code-modes')">Copiar</button>
+        </div>
+        <pre id="code-modes"><span class="k">from</span><span class="p"> </span><span class="n">Crypto.Cipher</span><span class="p"> </span><span class="k">import</span><span class="p"> </span><span class="n">AES</span>
+<span class="k">from</span><span class="p"> </span><span class="n">Crypto.Util.Padding</span><span class="p"> </span><span class="k">import</span><span class="p"> </span><span class="n">pad</span>
+
+<span class="k">def</span> <span class="f">encrypt_ecb</span><span class="p">(body: </span><span class="n">bytes</span><span class="p">, key: </span><span class="n">bytes</span><span class="p">) -&gt; </span><span class="n">bytes</span><span class="p">:</span>
+    <span class="c"># ECB: cada bloque de 16 bytes se encripta de forma independiente</span>
+    <span class="c"># bloques de píxeles idénticos → ciphertext idéntico → patrones visibles</span>
+    cipher <span class="p">= </span><span class="n">AES</span><span class="p">.</span><span class="f">new</span><span class="p">(key, </span><span class="n">AES</span><span class="p">.</span><span class="n">MODE_ECB</span><span class="p">)</span>
+    encrypted <span class="p">= cipher.</span><span class="f">encrypt</span><span class="p">(</span><span class="f">pad</span><span class="p">(body, </span><span class="n">AES</span><span class="p">.</span><span class="n">block_size</span><span class="p">))</span>
+    <span class="k">return</span><span class="p"> encrypted[:len(body)]</span>   <span class="c"># truncar al tamaño original</span>
+
+
+<span class="k">def</span> <span class="f">encrypt_cbc</span><span class="p">(body: </span><span class="n">bytes</span><span class="p">, key: </span><span class="n">bytes</span><span class="p">) -&gt; </span><span class="n">bytes</span><span class="p">:</span>
+    <span class="c"># CBC: cada bloque se XOR con el ciphertext anterior antes de encriptar</span>
+    <span class="c"># IV aleatorio → los patrones desaparecen, resultado parece ruido</span>
+    cipher <span class="p">= </span><span class="n">AES</span><span class="p">.</span><span class="f">new</span><span class="p">(key, </span><span class="n">AES</span><span class="p">.</span><span class="n">MODE_CBC</span><span class="p">)   </span><span class="c"># IV aleatorio por defecto</span>
+    encrypted <span class="p">= cipher.</span><span class="f">encrypt</span><span class="p">(</span><span class="f">pad</span><span class="p">(body, </span><span class="n">AES</span><span class="p">.</span><span class="n">block_size</span><span class="p">))</span>
+    <span class="k">return</span><span class="p"> encrypted[:len(body)]</span>
+
+
+<span class="k">def</span> <span class="f">encrypt_ctr</span><span class="p">(body: </span><span class="n">bytes</span><span class="p">, key: </span><span class="n">bytes</span><span class="p">) -&gt; </span><span class="n">bytes</span><span class="p">:</span>
+    <span class="c"># CTR: convierte AES en cifrado de flujo, encripta un contador y XOR con plaintext</span>
+    <span class="c"># no necesita padding, opera byte a byte → tamaño de salida igual al de entrada</span>
+    cipher <span class="p">= </span><span class="n">AES</span><span class="p">.</span><span class="f">new</span><span class="p">(key, </span><span class="n">AES</span><span class="p">.</span><span class="n">MODE_CTR</span><span class="p">, nonce=</span><span class="s">b""</span><span class="p">)   </span><span class="c"># nonce vacío → counter 128 bits</span>
+    <span class="k">return</span><span class="p"> cipher.</span><span class="f">encrypt</span><span class="p">(body)</span></pre>
+      </div>
+      <div class="callout callout-info">
+        <strong>¿Por qué se trunca el resultado en ECB y CBC?</strong>
+        AES opera sobre bloques de 16 bytes exactos. El padding completa el último bloque si el cuerpo de la imagen no es múltiplo de 16. Al truncar con <code>[:len(body)]</code>, devolvemos exactamente los mismos bytes que entraron — fundamental para que el PPM tenga el tamaño correcto.
+      </div>
+    </div>
+
+    <!-- encriptar_AES -->
+    <div class="tab-panel reveal" id="tab-main">
+      <div class="code-wrap">
+        <div class="code-header">
+          <span class="fname">encriptar_AES.py</span>
+          <button class="copy-btn" onclick="copyCode('code-main')">Copiar</button>
+        </div>
+        <pre id="code-main"><span class="k">from</span><span class="p"> </span><span class="n">Crypto.Random</span><span class="p"> </span><span class="k">import</span><span class="p"> get_random_bytes</span>
+<span class="k">from</span><span class="p"> split_head_body_img </span><span class="k">import</span><span class="p"> split_head_body</span>
+<span class="k">from</span><span class="p"> aes_encrypt_modes </span><span class="k">import</span><span class="p"> encrypt_ecb, encrypt_cbc, encrypt_ctr</span>
+<span class="k">import</span><span class="p"> os</span>
+
+<span class="k">def</span> <span class="f">write_ppm</span><span class="p">(header: </span><span class="n">bytes</span><span class="p">, body: </span><span class="n">bytes</span><span class="p">, output_path: </span><span class="n">str</span><span class="p">) -&gt; </span><span class="k">None</span><span class="p">:</span>
+    <span class="k">with</span> <span class="f">open</span><span class="p">(output_path, </span><span class="s">"wb"</span><span class="p">) </span><span class="k">as</span><span class="p"> f:</span>
+        <span class="p">f.</span><span class="f">write</span><span class="p">(header + body)</span>
+
+root <span class="p">= os.path.</span><span class="f">dirname</span><span class="p">(os.path.</span><span class="f">abspath</span><span class="p">(</span><span class="f">__file__</span><span class="p">))</span>
+input_path <span class="p">= os.path.</span><span class="f">join</span><span class="p">(root, </span><span class="s">"tux.ppm"</span><span class="p">)</span>
+
+key <span class="p">= </span><span class="f">get_random_bytes</span><span class="p">(</span><span class="num">16</span><span class="p">)   </span><span class="c"># Clave aleatoria de 128 bits (AES-128)</span>
+<span class="f">print</span><span class="p">(</span><span class="s">f"Clave AES (hex): {key.hex()}\n"</span><span class="p">)</span>
+
+header, body <span class="p">= </span><span class="f">split_head_body</span><span class="p">(input_path)</span>
+<span class="f">print</span><span class="p">(</span><span class="s">f"Header: {len(header)} bytes"</span><span class="p">)</span>
+<span class="f">print</span><span class="p">(</span><span class="s">f"Body  : {len(body)} bytes  ({len(body) // 3} píxeles)\n"</span><span class="p">)</span>
+
+<span class="c"># Cifrar con cada modo usando la misma clave</span>
+encrypted_body_cbc <span class="p">= </span><span class="f">encrypt_cbc</span><span class="p">(body, key)</span>
+encrypted_body_ecb <span class="p">= </span><span class="f">encrypt_ecb</span><span class="p">(body, key)</span>
+encrypted_body_ctr <span class="p">= </span><span class="f">encrypt_ctr</span><span class="p">(body, key)</span>
+
+<span class="c"># Escribir los archivos PPM con el header original + body cifrado</span>
+<span class="f">write_ppm</span><span class="p">(header, encrypted_body_ecb, </span><span class="s">"tux_encrypted_ecb.ppm"</span><span class="p">)</span>
+<span class="f">write_ppm</span><span class="p">(header, encrypted_body_cbc, </span><span class="s">"tux_encrypted_cbc.ppm"</span><span class="p">)</span>
+<span class="f">write_ppm</span><span class="p">(header, encrypted_body_ctr, </span><span class="s">"tux_encrypted_ctr.ppm"</span><span class="p">)</span></pre>
+      </div>
+      <div class="callout callout-warn">
+        <strong>Punto importante sobre la clave</strong>
+        La clave se genera aleatoriamente con <code>get_random_bytes(16)</code> cada vez que se ejecuta el script. Los tres modos comparten la misma clave para que la única variable sea el modo de operación.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ RESUMEN ══════════════ -->
+<section id="resumen">
+  <div class="container">
+    <div class="section-label reveal">Conclusiones</div>
+    <h2 class="reveal">Comparativa de modos</h2>
+    <p class="lead reveal">
+      El algoritmo AES subyacente es el mismo en los tres casos. Lo que los diferencia —y lo que determina su seguridad en la práctica— es el modo de operación.
+    </p>
+
+    <table class="compare-table reveal">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th><span style="color:var(--ecb-col)">ECB</span></th>
+          <th><span style="color:var(--cbc-col)">CBC</span></th>
+          <th><span style="color:var(--ctr-col)">CTR</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Oculta patrones estadísticos</td>
+          <td><span class="cross">✗ NO</span></td>
+          <td><span class="check">✓ SÍ</span></td>
+          <td><span class="check">✓ SÍ</span></td>
+        </tr>
+        <tr>
+          <td>Necesita IV / Nonce</td>
+          <td><span class="cross">✗ No</span></td>
+          <td><span class="check">✓ IV aleatorio</span></td>
+          <td><span class="check">✓ Nonce único</span></td>
+        </tr>
+        <tr>
+          <td>Necesita padding</td>
+          <td><span class="warn">⚠ Sí (PKCS7)</span></td>
+          <td><span class="warn">⚠ Sí (PKCS7)</span></td>
+          <td><span class="check">✓ No</span></td>
+        </tr>
+        <tr>
+          <td>Procesamiento paralelo</td>
+          <td><span class="check">✓ Sí</span></td>
+          <td><span class="cross">✗ Solo descifrado</span></td>
+          <td><span class="check">✓ Completo</span></td>
+        </tr>
+        <tr>
+          <td>Acceso aleatorio</td>
+          <td><span class="check">✓ Sí</span></td>
+          <td><span class="cross">✗ No</span></td>
+          <td><span class="check">✓ Sí</span></td>
+        </tr>
+        <tr>
+          <td>Propagación de errores</td>
+          <td>Solo en el bloque afectado</td>
+          <td>2 bloques (actual + siguiente)</td>
+          <td>Solo en el byte afectado</td>
+        </tr>
+        <tr>
+          <td>Uso recomendado</td>
+          <td><span class="cross">✗ Nunca</span></td>
+          <td><span class="warn">⚠ Con HMAC</span></td>
+          <td><span class="check">✓ Preferido</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info reveal">
+      <strong>En la práctica moderna</strong>
+      Para la mayoría de casos de uso se prefiere <strong>AES-GCM</strong> (basado en CTR + autenticación Galois), que proporciona tanto confidencialidad como autenticación en un solo pase. CBC aún se usa pero siempre debe combinarse con un MAC (ej. HMAC-SHA256). ECB nunca debe usarse para datos de más de un bloque.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <div>Laboratorio de Cifrado de Bloques · AES Encryption Modes</div>
+  <div class="credits">Visualización del <strong>Experimento Tux</strong> — ECB · CBC · CTR</div>
+</footer>
+
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<script>
+/* ─────────────────────────────────────────────
+   PPM Loader & Canvas Renderer
+───────────────────────────────────────────── */
+async function loadPPM(url, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const loader = canvas.parentElement.querySelector('.gallery-loader');
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const buf   = await resp.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+
+    // Parse header: 3 newline-terminated lines
+    let pos = 0, lines = [];
+    while (lines.length < 3 && pos < bytes.length) {
+      const nl = bytes.indexOf(10, pos);
+      if (nl === -1) break;
+      lines.push(new TextDecoder().decode(bytes.slice(pos, nl)));
+      pos = nl + 1;
+    }
+
+    const [w, h] = lines[1].trim().split(/\s+/).map(Number);
+    const pixels  = bytes.slice(pos, pos + w * h * 3);
+
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.style.display = 'block';
+
+    const ctx  = canvas.getContext('2d');
+    const img  = ctx.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) {
+      img.data[i*4]   = pixels[i*3];
+      img.data[i*4+1] = pixels[i*3+1];
+      img.data[i*4+2] = pixels[i*3+2];
+      img.data[i*4+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    if (loader) loader.remove();
+    return true;
+  } catch(e) {
+    canvas.style.display = 'none';
+    if (loader) {
+      loader.textContent = `⚠ No se pudo cargar (${e.message})`;
+      loader.style.animation = 'none';
+      loader.style.color = 'var(--yellow)';
+    }
+    return false;
+  }
+}
+
+// Insert loaders before loading images
+function prepareCanvas(id) {
+  const canvas = document.getElementById(id);
+  canvas.style.display = 'none';
+  const loader = document.createElement('div');
+  loader.className = 'gallery-loader';
+  loader.textContent = 'Cargando imagen...';
+  canvas.parentElement.insertBefore(loader, canvas);
+}
+
+async function loadAllImages() {
+  const status = document.getElementById('gallery-status');
+  ['canvas-ecb', 'canvas-cbc', 'canvas-ctr'].forEach(prepareCanvas);
+
+  const results = await Promise.all([
+    loadPPM('../tux_encrypted_ecb.ppm', 'canvas-ecb'),
+    loadPPM('../tux_encrypted_cbc.ppm', 'canvas-cbc'),
+    loadPPM('../tux_encrypted_ctr.ppm', 'canvas-ctr'),
+  ]);
+
+  const loaded = results.filter(Boolean).length;
+  if (status) {
+    if (loaded === 3) {
+      status.textContent = '✓ Las 3 imágenes cifradas cargadas correctamente.';
+      status.style.color = 'var(--green)';
+    } else if (loaded > 0) {
+      status.textContent = `⚠ ${loaded}/3 imágenes cargadas. Asegúrate de ejecutar encriptar_AES.py primero.`;
+      status.style.color = 'var(--yellow)';
+    } else {
+      status.textContent = '⚠ Ejecuta encriptar_AES.py para generar los archivos .ppm antes de abrir esta página.';
+      status.style.color = 'var(--red)';
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ECB Step Animation
+───────────────────────────────────────────── */
+let ecbStep = 0;
+const ECB_STEPS = 4;
+
+const ecbHighlight = (ids, on) => {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (on) {
+      el.style.filter = 'drop-shadow(0 0 6px currentColor)';
+      el.style.opacity = '1';
+    } else {
+      el.style.filter = '';
+      el.style.opacity = '';
+    }
+  });
+};
+
+function stepECB() {
+  ecbStep = (ecbStep % ECB_STEPS) + 1;
+  document.getElementById('ecb-step-label').textContent = `Paso ${ecbStep} / ${ECB_STEPS}`;
+  const btn = document.getElementById('ecb-step-btn');
+
+  // Reset all
+  ['ecb-p1','ecb-p2','ecb-p3','ecb-b1','ecb-b2','ecb-b3','ecb-c1','ecb-c2','ecb-c3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.filter = ''; el.style.opacity = '0.3'; }
+  });
+  ['ecb-warn-box','ecb-warn-t1','ecb-warn-t2','ecb-warn-t3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('opacity','0');
+  });
+
+  switch(ecbStep) {
+    case 1:
+      btn.textContent = '▶ Siguiente paso';
+      ['ecb-p1','ecb-p2','ecb-p3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.filter = 'drop-shadow(0 0 6px #bc8cff)'; el.style.opacity = '1'; }
+      });
+      document.getElementById('ecb-step-label').textContent = 'Paso 1/4 — Bloques de plaintext (P1, P2, P3=P1)';
+      break;
+    case 2:
+      ['ecb-b1','ecb-b2','ecb-b3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.filter = 'drop-shadow(0 0 6px #f85149)'; el.style.opacity = '1'; }
+      });
+      ['ecb-p1','ecb-p2','ecb-p3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.opacity = '0.6';
+      });
+      document.getElementById('ecb-step-label').textContent = 'Paso 2/4 — Cada bloque entra a AES de forma INDEPENDIENTE';
+      break;
+    case 3:
+      ['ecb-b1','ecb-b2','ecb-b3','ecb-c1','ecb-c2','ecb-c3','ecb-p1','ecb-p2','ecb-p3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.opacity = '0.7';
+      });
+      document.getElementById('ecb-step-label').textContent = 'Paso 3/4 — Bloque de salida cifrado';
+      break;
+    case 4:
+      // Show the warning: P1=P3 → C1=C3
+      ['ecb-p1','ecb-p3','ecb-c1','ecb-c3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.style.filter = 'drop-shadow(0 0 8px #f85149)'; el.style.opacity = '1'; }
+      });
+      ['ecb-p2','ecb-b1','ecb-b2','ecb-b3','ecb-c2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.opacity = '0.25';
+      });
+      ['ecb-warn-box','ecb-warn-t1','ecb-warn-t2','ecb-warn-t3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('opacity','1');
+      });
+      btn.textContent = '↺ Reiniciar';
+      document.getElementById('ecb-step-label').textContent = '⚠ Paso 4/4 — P1=P3 → C1=C3 el patrón SE PRESERVA';
+      break;
+  }
+
+  if (ecbStep === ECB_STEPS) {
+    setTimeout(() => { ecbStep = 0; }, 100);
+  }
+}
+
+// Reset ECB state
+document.querySelectorAll('[id^="ecb-"]').forEach(el => {
+  el.style && (el.style.opacity = '');
+});
+
+/* ─────────────────────────────────────────────
+   CBC Step Animation
+───────────────────────────────────────────── */
+let cbcStep = 0;
+const CBC_STEPS = 5;
+
+function stepCBC() {
+  cbcStep = (cbcStep % CBC_STEPS) + 1;
+  document.getElementById('cbc-step-label').textContent = `Paso ${cbcStep} / ${CBC_STEPS}`;
+  const btn = document.getElementById('cbc-step-btn');
+
+  const all = ['cbc-iv','cbc-p1','cbc-p2','cbc-p3','cbc-xor1','cbc-xor2','cbc-xor3',
+               'cbc-a1','cbc-a2','cbc-a3','cbc-c1','cbc-c2','cbc-c3','cbc-chain1','cbc-chain2'];
+  all.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.filter = ''; el.style.opacity = '0.2'; }
+  });
+
+  const glow = (ids, color) => ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.filter = `drop-shadow(0 0 6px ${color})`; el.style.opacity = '1'; }
+  });
+
+  switch(cbcStep) {
+    case 1:
+      glow(['cbc-iv'], '#ffa657');
+      document.getElementById('cbc-step-label').textContent = 'Paso 1/5 — IV aleatorio (se genera una vez por mensaje)';
+      btn.textContent = '▶ Siguiente paso';
+      break;
+    case 2:
+      glow(['cbc-p1','cbc-p2','cbc-p3'], '#bc8cff');
+      ['cbc-iv'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='0.5'; });
+      document.getElementById('cbc-step-label').textContent = 'Paso 2/5 — Los bloques de plaintext P1, P2, P3';
+      break;
+    case 3:
+      glow(['cbc-iv','cbc-xor1'], '#ffa657');
+      ['cbc-p1'].forEach(id => { const el=document.getElementById(id); if(el) { el.style.opacity='0.7'; } });
+      document.getElementById('cbc-step-label').textContent = 'Paso 3/5 — P1 ⊕ IV antes de entrar a AES';
+      break;
+    case 4:
+      glow(['cbc-a1','cbc-c1'], '#58a6ff');
+      ['cbc-iv','cbc-p1','cbc-xor1'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='0.5'; });
+      document.getElementById('cbc-step-label').textContent = 'Paso 4/5 — AES cifra el resultado del XOR → C1';
+      break;
+    case 5:
+      glow(['cbc-chain1','cbc-xor2','cbc-a2','cbc-c2','cbc-chain2','cbc-xor3','cbc-a3','cbc-c3'], '#58a6ff');
+      ['cbc-c1'].forEach(id => { const el=document.getElementById(id); if(el) { el.style.filter='drop-shadow(0 0 8px #ffa657)'; el.style.opacity='1'; } });
+      ['cbc-p2','cbc-p3'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='0.6'; });
+      btn.textContent = '↺ Reiniciar';
+      document.getElementById('cbc-step-label').textContent = '✓ Paso 5/5 — C1 encadena a C2, C2 a C3 — ¡sin patrones!';
+      break;
+  }
+
+  if (cbcStep === CBC_STEPS) setTimeout(() => { cbcStep = 0; }, 100);
+}
+
+/* ─────────────────────────────────────────────
+   CTR Step Animation
+───────────────────────────────────────────── */
+let ctrStep = 0;
+const CTR_STEPS = 4;
+
+function stepCTR() {
+  ctrStep = (ctrStep % CTR_STEPS) + 1;
+  document.getElementById('ctr-step-label').textContent = `Paso ${ctrStep} / ${CTR_STEPS}`;
+  const btn = document.getElementById('ctr-step-btn');
+
+  const all = ['ctr-n1','ctr-n2','ctr-n3','ctr-a1','ctr-a2','ctr-a3',
+               'ctr-k1','ctr-k2','ctr-k3','ctr-xor1','ctr-xor2','ctr-xor3',
+               'ctr-p1','ctr-p2','ctr-p3','ctr-c1','ctr-c2','ctr-c3'];
+  all.forEach(id => { const el=document.getElementById(id); if(el) { el.style.filter=''; el.style.opacity='0.18'; } });
+
+  const glow = (ids, color) => ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.filter = `drop-shadow(0 0 6px ${color})`; el.style.opacity = '1'; }
+  });
+
+  switch(ctrStep) {
+    case 1:
+      glow(['ctr-n1','ctr-n2','ctr-n3'], '#3fb950');
+      document.getElementById('ctr-step-label').textContent = 'Paso 1/4 — Bloques de contador: Nonce ∥ CTR=1, 2, 3…';
+      btn.textContent = '▶ Siguiente paso';
+      break;
+    case 2:
+      glow(['ctr-n1','ctr-n2','ctr-n3','ctr-a1','ctr-a2','ctr-a3','ctr-k1','ctr-k2','ctr-k3'], '#3fb950');
+      document.getElementById('ctr-step-label').textContent = 'Paso 2/4 — AES cifra el contador → genera keystream K₁ K₂ K₃';
+      break;
+    case 3:
+      glow(['ctr-xor1','ctr-xor2','ctr-xor3','ctr-p1','ctr-p2','ctr-p3'], '#ffa657');
+      ['ctr-k1','ctr-k2','ctr-k3'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='0.6'; });
+      document.getElementById('ctr-step-label').textContent = 'Paso 3/4 — Plaintext ⊕ Keystream (el plaintext nunca entra a AES)';
+      break;
+    case 4:
+      glow(['ctr-c1','ctr-c2','ctr-c3'], '#3fb950');
+      all.forEach(id => { const el=document.getElementById(id); if(el) { if(el.style.opacity==='0.18') el.style.opacity='0.4'; } });
+      btn.textContent = '↺ Reiniciar';
+      document.getElementById('ctr-step-label').textContent = '✓ Paso 4/4 — Ciphertext. Todos los bloques son INDEPENDIENTES entre sí';
+      break;
+  }
+
+  if (ctrStep === CTR_STEPS) setTimeout(() => { ctrStep = 0; }, 100);
+}
+
+/* ─────────────────────────────────────────────
+   Interactive ECB Pixel Demo
+───────────────────────────────────────────── */
+(function buildPixelDemo() {
+  const colors = [
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#f2c800', label: 'Tux' },
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#f2c800', label: 'Tux' },
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#ffffff', label: 'Blanco' },
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#1a1a2e', label: 'Fondo' },
+    { hex: '#f2c800', label: 'Tux' },
+  ];
+
+  // Simulate ECB: same color = same encrypted block
+  const encColors = {
+    '#1a1a2e': '#3d1c1c',
+    '#f2c800': '#0d2b4e',
+    '#ffffff': '#4a0d3f',
+  };
+
+  const row = document.getElementById('ecb-pixel-row');
+  const info = document.getElementById('ecb-pixel-info');
+  if (!row) return;
+
+  colors.forEach((c, i) => {
+    const block = document.createElement('div');
+    block.className = 'px-block';
+    block.style.background = c.hex;
+    block.style.color = c.hex === '#ffffff' ? '#000' : '#ccc';
+    block.title = `Bloque ${i+1}: ${c.label}`;
+    block.dataset.color = c.hex;
+    block.dataset.idx   = i;
+    block.textContent = `B${i+1}`;
+
+    block.addEventListener('click', () => {
+      // Deselect all
+      document.querySelectorAll('.px-block').forEach(b => b.classList.remove('selected'));
+      block.classList.add('selected');
+
+      // Find duplicates
+      const same = [...document.querySelectorAll('.px-block')]
+        .filter(b => b.dataset.color === c.hex && b !== block);
+      same.forEach(b => b.classList.add('selected'));
+
+      const enc = encColors[c.hex] || '#555';
+      const count = same.length + 1;
+      info.style.color = count > 1 ? 'var(--red)' : 'var(--green)';
+      info.textContent = count > 1
+        ? `⚠ ${count} bloques con color "${c.label}" → mismo ciphertext: ${enc} — ¡PATRÓN VISIBLE!`
+        : `✓ Bloque único. Ciphertext: ${enc}`;
+    });
+
+    row.appendChild(block);
+  });
+})();
+
+/* ─────────────────────────────────────────────
+   Tabs
+───────────────────────────────────────────── */
+function switchTab(event, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+/* ─────────────────────────────────────────────
+   Copy code
+───────────────────────────────────────────── */
+function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const btn = el.closest('.code-wrap').querySelector('.copy-btn');
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => btn.textContent = 'Copiar', 1500); }
+  });
+}
+
+/* ─────────────────────────────────────────────
+   Scroll reveal
+───────────────────────────────────────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ─────────────────────────────────────────────
+   Init
+───────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  loadAllImages();
+});
+</script>
+</body>
+</html>
