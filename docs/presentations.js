@@ -96,7 +96,7 @@ export const presentations = [
     description: "Algoritmo ECC",
     path: "temas/asimetricos/ECC/index.html",
     image: "temas/asimetricos/assets/ecc.png",
-    active: falseE,
+    active: false,
   },
   {
     title: "Algoritmos Asimétricos",
