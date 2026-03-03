@@ -68,7 +68,7 @@ export const presentations = [
     description: "Introducción a los cifrados asimétricos",
     path: "temas/asimetricos/index.html",
     image: "temas/asimetricos/assets/asimetricos.png",
-    active: false,
+    active: true,
   },
   {
     title: "Hashes",
@@ -96,13 +96,13 @@ export const presentations = [
     description: "Algoritmo ECC",
     path: "temas/asimetricos/ECC/index.html",
     image: "temas/asimetricos/assets/ecc.png",
-    active: false,
+    active: falseE,
   },
   {
     title: "Algoritmos Asimétricos",
     description: "Comparación de Algoritmos asimétricos",
     path: "temas/asimetricos/Algoritmos/index.html",
     image: "temas/asimetricos/assets/algoritmos.jpeg",
-    active: false,
+    active: true,
   },
 ];

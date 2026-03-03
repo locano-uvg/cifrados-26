@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cifrados Asimétricos</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+    <style>
+      .discuss {
+        margin-top: 1.2rem;
+        padding: 0.6rem 1rem;
+        border-left: 4px solid #bd93f9;
+        background: rgba(189, 147, 249, 0.08);
+        font-size: 1rem;
+        color: #ccc;
+        text-align: left;
+      }
+      .tag {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-right: 0.3rem;
+      }
+      .tag-enc {
+        background: #50fa7b22;
+        color: #50fa7b;
+        border: 1px solid #50fa7b;
+      }
+      .tag-sign {
+        background: #ffb86c22;
+        color: #ffb86c;
+        border: 1px solid #ffb86c;
+      }
+      .tag-kex {
+        background: #8be9fd22;
+        color: #8be9fd;
+        border: 1px solid #8be9fd;
+      }
+      .tag-pqc {
+        background: #ff79c622;
+        color: #ff79c6;
+        border: 1px solid #ff79c6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- ══════════════════════════════════════════
+             1. PORTADA
+        ══════════════════════════════════════════ -->
+        <section>
+          <h1>Cifrados Asimétricos</h1>
+          <p>Criptografía de Clave Pública</p>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             2. EL PROBLEMA (gancho)
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>El Problema</h2>
+            <p>¿Por qué necesitamos criptografía asimétrica?</p>
+          </section>
+
+          <section>
+            <h3>Distribución de Claves Simétricas</h3>
+            <p>
+              Con cifrado simétrico, cada par de usuarios necesita
+              <strong>su propia clave secreta</strong>.
+            </p>
+            <p>
+              Para <em>N</em> usuarios hacen falta
+              <strong>N(N−1)/2</strong> claves:
+            </p>
+            <ul>
+              <li>10 usuarios → 45 claves</li>
+              <li>100 usuarios → 4,950 claves</li>
+              <li>1,000 usuarios → 499,500 claves</li>
+            </ul>
+            <p class="fragment">
+              ¿Y cómo distribuyes esas claves de forma segura<br />
+              <strong>sin un canal seguro previo</strong>?
+            </p>
+            <div class="discuss fragment">
+              ¿Qué hacían los ejércitos antes de Internet para distribuir
+              claves?
+            </div>
+          </section>
+
+          <section>
+            <h3>Simétrica vs Asimétrica</h3>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Aspecto</th>
+                <th>Simétrica</th>
+                <th>Asimétrica</th>
+              </tr>
+              <tr>
+                <td>Claves</td>
+                <td>Una sola compartida</td>
+                <td>Par pública / privada</td>
+              </tr>
+              <tr>
+                <td>Velocidad</td>
+                <td>Muy rápida</td>
+                <td>100–1000× más lenta</td>
+              </tr>
+              <tr>
+                <td>Distribución</td>
+                <td>Problema abierto</td>
+                <td>Resuelto</td>
+              </tr>
+              <tr>
+                <td>Autenticación</td>
+                <td>No directa</td>
+                <td>Sí — firmas digitales</td>
+              </tr>
+              <tr>
+                <td>Uso típico</td>
+                <td>Cifrado masivo de datos</td>
+                <td>Intercambio de claves, firmas</td>
+              </tr>
+            </table>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             3. LA SOLUCIÓN: PAR DE CLAVES
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>La Solución</h2>
+            <p>Un par de claves matemáticamente relacionadas</p>
+          </section>
+
+          <section>
+            <h3>Clave Pública y Clave Privada</h3>
+            <ul>
+              <li>
+                <strong>Clave pública</strong> — se comparte libremente.<br />
+                Cifra datos · verifica firmas
+              </li>
+              <li style="margin-top: 0.8rem">
+                <strong>Clave privada</strong> — nunca sale de tu sistema.<br />
+                Descifra datos · genera firmas
+              </li>
+            </ul>
+            <p class="fragment" style="margin-top: 1rem">
+              La clave pública se <em>deriva</em> de la privada,<br />
+              pero el proceso <strong>no se puede invertir</strong> en tiempo
+              razonable.
+            </p>
+          </section>
+
+          <section>
+            <h3>Trapdoor Functions</h3>
+            <p>
+              La seguridad descansa en problemas fáciles en una dirección,
+              inviables en la otra:
+            </p>
+            <ul>
+              <li>
+                <strong>Factorización de enteros</strong> — base de RSA<br />
+                <small
+                  >Multiplicar dos primos enormes: trivial. Factorizarlos:
+                  inviable.</small
+                >
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>Logaritmo discreto</strong> — base de DH / ElGamal<br />
+                <small
+                  >Calcular g<sup>x</sup> mod p: rápido. Encontrar x dado
+                  g<sup>x</sup>: inviable.</small
+                >
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>Problema del punto en curvas elípticas</strong> — base
+                de ECC<br />
+                <small
+                  >Misma idea, claves 10× más cortas para igual
+                  seguridad.</small
+                >
+              </li>
+            </ul>
+            <div class="discuss fragment">
+              ¿Por qué "computacionalmente inviable" no significa "imposible"?
+            </div>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             4. HISTORIA
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>Historia</h2>
+            <p>De la teoría al estándar global</p>
+          </section>
+
+          <section>
+            <h3>El Nacimiento (1976–1985)</h3>
+            <ul>
+              <li>
+                <strong>1976</strong> — Diffie &amp; Hellman:
+                <em>"New Directions in Cryptography"</em><br />
+                <small
+                  >Primera propuesta pública de intercambio de claves sin canal
+                  secreto previo</small
+                >
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>1977</strong> — RSA (Rivest, Shamir, Adleman)<br />
+                <small
+                  >Primer algoritmo práctico de clave pública para cifrado y
+                  firmas</small
+                >
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>1985</strong> — Koblitz &amp; Miller proponen ECC<br />
+                <small
+                  >Seguridad equivalente a RSA con claves mucho más
+                  pequeñas</small
+                >
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Internet y las Primeras Grietas (1991–2010)</h3>
+            <ul>
+              <li>
+                <strong>1991</strong> — PGP: cifrado de correo para el público
+                general
+              </li>
+              <li>
+                <strong>1994</strong> — Shor demuestra que una computadora
+                cuántica rompe RSA → nace la amenaza cuántica
+              </li>
+              <li>
+                <strong>1995</strong> — Netscape SSL con RSA → base de HTTPS
+              </li>
+              <li>
+                <strong>1998</strong> — Bleichenbacher: padding oracle contra
+                RSA PKCS#1 v1.5
+              </li>
+              <li><strong>2009</strong> — Bitcoin usa ECDSA (secp256k1)</li>
+              <li>
+                <strong>2010</strong> — Hack PS3: nonce reutilizado en ECDSA
+                expone clave privada
+              </li>
+            </ul>
+            <div class="discuss fragment">
+              ¿Por qué la amenaza cuántica de 1994 no importó hasta hace poco?
+            </div>
+          </section>
+
+          <section>
+            <h3>La Era Post-Cuántica (2016–2024)</h3>
+            <ul>
+              <li>
+                <strong>2016</strong> — NIST lanza concurso de estandarización
+                PQC
+              </li>
+              <li>
+                <strong>2018</strong> — TLS 1.3 elimina RSA estático; solo
+                ECDHE/DHE
+              </li>
+              <li>
+                <strong>2024</strong> — NIST publica primeros estándares PQC:
+                <ul style="list-style: none; margin-top: 0.4rem">
+                  <li>
+                    <span class="tag tag-pqc">ML-KEM</span> FIPS 203 —
+                    intercambio de claves
+                  </li>
+                  <li>
+                    <span class="tag tag-pqc">ML-DSA</span> FIPS 204 — firmas
+                    digitales
+                  </li>
+                  <li>
+                    <span class="tag tag-pqc">SLH-DSA</span> FIPS 205 — firmas
+                    basadas en hash
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             5. TRES OPERACIONES FUNDAMENTALES
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>Tres Operaciones Fundamentales</h2>
+          </section>
+
+          <section>
+            <h3>Crifrado - Confidencialidad</h3>
+            <ul>
+              <li>
+                Cualquiera cifra con la <strong>clave pública</strong> del
+                destinatario
+              </li>
+              <li>
+                Solo el destinatario descifra con su
+                <strong>clave privada</strong>
+              </li>
+              <li>
+                Garantiza que solo el receptor previsto puede leer el mensaje
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="./assets/public1.gif" alt="Cifrado Asimétrico" />
+          </section>
+
+          <section>
+            <h3>Firma Digital - Autenticidad e Integridad</h3>
+            <ol>
+              <li>
+                Se calcula el <strong>hash</strong> del mensaje (SHA-256, SHA-3)
+              </li>
+              <li>
+                El hash se firma con la <strong>clave privada</strong> del
+                emisor
+              </li>
+              <li>
+                El receptor verifica con la <strong>clave pública</strong> y
+                recomputa el hash
+              </li>
+            </ol>
+            <p style="margin-top: 0.8rem">
+              Garantiza: <strong>autenticidad · integridad · no repudio</strong>
+            </p>
+            <div class="discuss fragment">
+              ¿Por qué firmamos el hash y no el mensaje completo?
+            </div>
+          </section>
+
+          <section>
+            <h3>Intercambio de Claves DH / ECDH</h3>
+            <ul>
+              <li>
+                Dos partes generan una <strong>clave compartida</strong>
+                sobre un canal público — sin enviársela entre sí
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>Perfect Forward Secrecy (PFS):</strong>
+                claves efímeras por sesión → comprometer la clave privada futura
+                <em>no expone sesiones pasadas</em>
+              </li>
+              <li style="margin-top: 0.6rem">
+                TLS 1.3 <strong>exige PFS</strong> — elimina el intercambio
+                estático con RSA
+              </li>
+            </ul>
+            <div class="discuss fragment">
+              ¿Cómo es posible ponerse de acuerdo en un secreto sin enviárselo?
+            </div>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             6. ALGORITMOS
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>Algoritmos Principales</h2>
+          </section>
+
+          <section>
+            <h3>Por Caso de Uso</h3>
+            <table style="font-size: 1.1rem">
+              <tr>
+                <th>Uso</th>
+                <th>Algoritmo</th>
+                <th>Nota</th>
+              </tr>
+              <tr>
+                <td><span class="tag tag-enc">Cifrado</span></td>
+                <td>RSA-OAEP</td>
+                <td>Mínimo 2048 bits; preferir 3072</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-sign">Firma</span></td>
+                <td>ECDSA / Ed25519</td>
+                <td>Ed25519 recomendado hoy (SSH, TLS)</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-kex">Intercambio</span></td>
+                <td>ECDH (X25519)</td>
+                <td>Estándar en TLS 1.3</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-pqc">Post-Cuántico</span></td>
+                <td>ML-KEM / ML-DSA</td>
+                <td>Estándares NIST 2024</td>
+              </tr>
+            </table>
+            <p style="font-size: 0.9rem; margin-top: 0.8rem; color: #aaa">
+              ECC-256 ofrece seguridad equivalente a RSA-3072 con claves 10× más
+              pequeñas.
+            </p>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             7. EN LA PRÁCTICA: CIFRADO HÍBRIDO
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>En la Práctica</h2>
+            <p>Nadie usa solo criptografía asimétrica para cifrar datos</p>
+          </section>
+
+          <section>
+            <h3>Cifrado Híbrido</h3>
+            <p>
+              La criptografía asimétrica es
+              <strong>100–1000× más lenta</strong> que AES.
+            </p>
+            <ol>
+              <li>
+                RSA / ECDH negocia una
+                <strong>clave de sesión simétrica</strong> (ej. AES-256)
+              </li>
+              <li>AES cifra los datos con esa clave efímera</li>
+              <li>
+                El receptor usa su clave privada para recuperar la clave de
+                sesión
+              </li>
+            </ol>
+            <p style="margin-top: 0.8rem">
+              <strong>Dónde ocurre esto hoy:</strong>
+              TLS 1.3 · PGP · Signal Protocol · HTTPS
+            </p>
+            <div class="discuss fragment">
+              ¿Cuándo tiene sentido cifrar directamente con RSA?
+            </div>
+          </section>
+
+          <section>
+            <h3>Aplicaciones Reales</h3>
+            <ul>
+              <li>
+                <strong>HTTPS / TLS 1.3:</strong>
+                ECDHE (X25519) para intercambio · ECDSA/RSA para certificados
+              </li>
+              <li>
+                <strong>SSH:</strong>
+                Ed25519 como algoritmo recomendado (sobre RSA-4096)
+              </li>
+              <li>
+                <strong>Blockchain:</strong>
+                ECDSA secp256k1 (Bitcoin, Ethereum) · EdDSA (Solana)
+              </li>
+              <li>
+                <strong>PGP / GPG:</strong>
+                Preferir ECC (ed25519 + cv25519) sobre RSA legacy
+              </li>
+              <li>
+                <strong>Signal / WhatsApp:</strong>
+                X3DH + Double Ratchet — ECDH efímero + ratchet simétrico
+              </li>
+              <li>
+                <strong>PKI / X.509:</strong>
+                Base de toda la identidad digital en Internet
+              </li>
+            </ul>
+            <div class="discuss fragment">
+              ¿Cómo confías en que una clave pública pertenece a quien dice ser?
+            </div>
+          </section>
+
+          <section>
+            <img
+              src="./assets/public2.gif"
+              alt="Cifrado Asimétrico vs Simétrico"
+            />
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             8. ERRORES COMUNES
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>Errores Comunes</h2>
+            <p>Donde han fallado sistemas reales</p>
+          </section>
+
+          <section>
+            <h3>Errores de Protocolo</h3>
+            <ul>
+              <li>
+                <strong>RSA con PKCS#1 v1.5:</strong>
+                Vulnerable al ataque Bleichenbacher (1998) →
+                <em>usar RSA-OAEP</em>
+              </li>
+              <li>
+                <strong>Nonce reutilizado en ECDSA:</strong>
+                Sony PS3 (2010) — reutilizar <em>k</em> expone la clave privada
+                completamente
+              </li>
+              <li>
+                <strong>Claves cortas:</strong>
+                RSA-1024 rota en 2010. Mínimo: RSA-2048; recomendado: RSA-3072 o
+                ECC-256
+              </li>
+              <li>
+                <strong>No verificar certificados TLS:</strong>
+                Bypass total de autenticación — MITM invisible
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Errores de Implementación</h3>
+            <ul>
+              <li>
+                <strong>Clave privada en el repositorio:</strong>
+                Exposición directa e irreversible
+              </li>
+              <li>
+                <strong>Sin passphrase en disco:</strong>
+                Clave privada accesible a cualquiera con acceso al sistema
+              </li>
+              <li>
+                <strong>Sin revocación (CRL / OCSP):</strong>
+                Certificados comprometidos permanecen activos
+              </li>
+              <li>
+                <strong>Algoritmos obsoletos:</strong>
+                MD5, SHA-1, RSA sin padding, Dual_EC_DRBG (backdoor NSA)
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Ataques de Canal Lateral</h3>
+            <p>
+              Una implementación correcta en papel puede filtrar información a
+              través de
+              <strong
+                >tiempo de ejecución · consumo de energía · radiación EM</strong
+              >.
+            </p>
+            <ul style="margin-top: 0.8rem">
+              <li>
+                Timing attack: medir tiempo de descifrado RSA puede revelar la
+                clave privada
+              </li>
+              <li>
+                Se requieren implementaciones de
+                <strong>tiempo constante</strong>
+              </li>
+              <li>
+                Librerías auditadas: <strong>libsodium · OpenSSL 3.x</strong>
+              </li>
+            </ul>
+            <p style="margin-top: 0.8rem; font-size: 1.1rem">
+              Regla de oro: <strong>"Don't roll your own crypto."</strong>
+            </p>
+            <div class="discuss fragment">
+              ¿Qué información puede revelar que una operación tarda 0.5 ms vs
+              0.7 ms?
+            </div>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             9. AMENAZA CUÁNTICA
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>La Amenaza Cuántica</h2>
+          </section>
+
+          <section>
+            <h3>El Algoritmo de Shor</h3>
+            <ul>
+              <li>
+                Una computadora cuántica suficientemente grande puede
+                <strong
+                  >factorizar RSA y resolver el logaritmo discreto en tiempo
+                  polinomial</strong
+                >
+              </li>
+              <li style="margin-top: 0.6rem">
+                Esto rompería RSA, DH, ECDH, ECDSA — la base de Internet seguro
+                actual
+              </li>
+              <li style="margin-top: 0.6rem">
+                <strong>Grover</strong> debilita AES pero no lo rompe — basta
+                duplicar el tamaño de clave
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Harvest Now, Decrypt Later</h3>
+            <p>
+              Adversarios con recursos ya
+              <strong>almacenan tráfico cifrado hoy</strong>
+              para descifrarlo cuando existan computadoras cuánticas capaces.
+            </p>
+            <ul style="margin-top: 0.8rem">
+              <li>
+                Datos con valor confidencial de +10 años están en riesgo
+                <em>ahora</em>
+              </li>
+              <li>La ventana de migración se cierra antes de lo que parece</li>
+              <li>
+                NIST recomienda migrar a PQC antes de <strong>2030</strong>
+              </li>
+            </ul>
+            <div class="discuss fragment">
+              ¿Qué sistemas tienen mayor urgencia de migrar a PQC primero?
+            </div>
+          </section>
+
+          <section>
+            <h3>Criptografía Post-Cuántica (PQC)</h3>
+            <p>
+              Estándares NIST 2024 — diseñados para resistir ataques cuánticos:
+            </p>
+            <ul style="margin-top: 0.8rem">
+              <li>
+                <span class="tag tag-pqc">ML-KEM</span> (FIPS 203) — Intercambio
+                de claves (sucesor de Kyber)
+              </li>
+              <li>
+                <span class="tag tag-pqc">ML-DSA</span> (FIPS 204) — Firmas
+                digitales (sucesor de Dilithium)
+              </li>
+              <li>
+                <span class="tag tag-pqc">SLH-DSA</span> (FIPS 205) — Firmas
+                basadas en hash (SPHINCS+)
+              </li>
+            </ul>
+            <p style="margin-top: 0.8rem; font-size: 0.95rem; color: #aaa">
+              TLS 1.3 ya soporta ML-KEM en experimentos. Chrome y Firefox lo
+              están adoptando.
+            </p>
+          </section>
+        </section>
+
+        <!-- ══════════════════════════════════════════
+             10. CIERRE Y TEMAS A PROFUNDIZAR
+        ══════════════════════════════════════════ -->
+        <section>
+          <section>
+            <h2>Resumen</h2>
+          </section>
+
+          <section>
+            <h3>Lo Esencial</h3>
+            <ul>
+              <li>
+                <strong>Par de claves</strong> resuelve la distribución segura
+                sin canal previo
+              </li>
+              <li>
+                <strong>Tres usos:</strong> cifrar · firmar · intercambiar
+                claves
+              </li>
+              <li>
+                <strong>Nunca solo asimétrico</strong> para datos: usar cifrado
+                híbrido
+              </li>
+              <li>
+                <strong>ECC > RSA</strong> para nuevos sistemas (mismo nivel,
+                claves pequeñas)
+              </li>
+              <li><strong>PFS obligatorio</strong> — TLS 1.3 ya lo exige</li>
+              <li><strong>Migrar a PQC</strong> antes de 2030</li>
+              <li><strong>No implementes tu propio crypto</strong></li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Temas para Sesiones Futuras</h3>
+            <ul>
+              <li>
+                RSA en profundidad: generación de claves, padding OAEP, firmas
+                PSS
+              </li>
+              <li>Matemáticas de curvas elípticas: ¿por qué funciona?</li>
+              <li>PKI y certificados X.509: cadena de confianza, CA, OCSP</li>
+              <li>TLS 1.3 por dentro: handshake completo paso a paso</li>
+              <li>Signal Protocol: X3DH + Double Ratchet</li>
+              <li>Ataques reales: Bleichenbacher, ROBOT, timing attacks</li>
+              <li>PQC en detalle: lattices, algoritmo de Kyber</li>
+            </ul>
+            <div class="discuss">
+              ¿Qué tema les genera más preguntas para la próxima sesión?
+            </div>
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>
