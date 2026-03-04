@@ -103,6 +103,6 @@ export const presentations = [
     description: "Comparación de Algoritmos asimétricos",
     path: "temas/asimetricos/Algoritmos/index.html",
     image: "temas/asimetricos/assets/algoritmos.jpeg",
-    active: true,
+    active: false,
   },
 ];
