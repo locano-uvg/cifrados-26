@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RSA — Rivest-Shamir-Adleman</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- 1. PORTADA -->
+        <section>
+          <h1>RSA</h1>
+          <p>Rivest-Shamir-Adleman (1977)</p>
+        </section>
+
+        <!-- 2. TERMINOLOGÍA -->
+        <section>
+          <section>
+            <h2>Terminología</h2>
+          </section>
+          <section>
+            <img
+              src="../assets/rsa1.png"
+              alt="RSA"
+              height="250"
+              style="background-color: white"
+            />
+            <br />
+            <strong>Public Key Encryption</strong>
+            <ul>
+              <li>
+                Alice publica una llave pública derivada de una llave privada.
+              </li>
+              <li>
+                Todos pueden encriptar un mensaje para Alice usando la llave
+                pública
+              </li>
+              <li>
+                Solo Alice puede descifrar el mensaje usando la llave privada.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/rsa2.png" alt="RSA" height="250" />
+            <br />
+            <strong>Key Agreement</strong>
+            <p>
+              Los involucrados intercambian llaves públicas en un canal inseguro
+              para establecer una llave secreta.
+            </p>
+          </section>
+          <section>
+            <img src="../assets/rsa3.jpg" alt="RSA" height="250" />
+            <br />
+            <strong>Digital Signature</strong>
+            <ul>
+              <li>
+                Alice publica la llave pública derivada de la llave privada.
+              </li>
+              <li>Alice firma el mensaje usando la llave privada</li>
+              <li>
+                Cualquier persona puede validar el mensaje usando la llave
+                pública
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/rsa4.png" alt="RSA" height="600px" />
+          </section>
+        </section>
+
+        <!-- 3. DEFINICIÓN -->
+        <section>
+          <section>
+            <h2>Definición</h2>
+          </section>
+          <section>
+            <h3>¿Qué es RSA?</h3>
+            <ul>
+              <li>Algoritmo de cifrado asimétrico publicado en 1977</li>
+              <li>Inventado por Rivest, Shamir y Adleman (MIT)</li>
+              <li>
+                Su seguridad se basada en la dificultad de
+                <strong
+                  >factorizar el producto de dos números primos grandes</strong
+                >
+              </li>
+              <li>
+                Soporta cifrado de datos, firmas digitales y autenticación
+              </li>
+              <li>
+                Actualmente se recomienda el uso de keys de al menos 2048 bits
+                para seguridad a largo plazo
+              </li>
+              <li>
+                Se recomienda que todo nuevo software debe usar 3072 bits o
+                migrar a ECC.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Aplicación en la Práctica</h3>
+            <p>
+              RSA es un algoritmo que
+              <strong>no cifra datos directamente</strong>, sino que cifra
+              claves simétricas (AES) que luego cifran los datos reales.:
+            </p>
+            <ul>
+              <li>
+                <strong>TLS:</strong> RSA autentica el servidor (certificado
+                X.509), pero el intercambio de claves usa ECDHE desde TLS 1.3
+              </li>
+              <li>
+                <strong>Cifrado híbrido:</strong> RSA cifra una clave AES
+                simétrica; AES cifra los datos
+              </li>
+              <li>
+                <strong>Firmas de código:</strong> RSA-PSS para firmado de
+                binarios, actualizaciones de software
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 4. CÓMO FUNCIONA RSA -->
+        <section>
+          <!-- 4.0 Header -->
+          <section>
+            <h2>¿Cómo Funciona RSA?</h2>
+          </section>
+
+          <!-- 4.0b Visual general del algoritmo -->
+          <section>
+            <img
+              src="../assets/rsa5.jpg"
+              alt="Diagrama general de RSA"
+              height="600px"
+            />
+          </section>
+
+          <!-- 4.1 La trampa matemática -->
+          <section>
+            <h3>Operación basada en un solo sentido</h3>
+            <div
+              style="
+                display: flex;
+                gap: 1rem;
+                font-size: 0.82rem;
+                margin-top: 0.8rem;
+                text-align: left;
+              "
+            >
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 1rem;
+                "
+              >
+                <div
+                  style="
+                    color: #50fa7b;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  FÁCIL — Multiplicar dos primos
+                </div>
+                <code>61 × 53 = <strong>3233</strong></code>
+                <br /><br />
+                <code>p × q = n</code>
+                <p
+                  style="margin-top: 0.6rem; color: #8be9fd; font-size: 0.78rem"
+                >
+                  Una calculadora lo hace en microsegundos.
+                </p>
+              </div>
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 1rem;
+                "
+              >
+                <div
+                  style="
+                    color: #ff5555;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  DIFÍCIL — Factorizar el resultado
+                </div>
+                <code>3233 = <strong>? × ?</strong></code>
+                <br /><br />
+                En RSA-2048, <strong>n</strong> tiene 617 dígitos.<br />
+              </div>
+            </div>
+            <p>
+              RSA <em>publica</em> n. Oculta p y q. Sin ellos, nadie puede
+              calcular la llave privada.
+            </p>
+          </section>
+
+          <!-- 4.2 Generación de claves paso a paso con ejemplo embebido -->
+          <section>
+            <h3>Generación de Claves</h3>
+            <div
+              style="
+                font-size: 0.79rem;
+                text-align: left;
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span
+                  >1. Elegir dos primos grandes <strong>p</strong> y
+                  <strong>q</strong> al azar — <em>nunca se publican</em></span
+                >
+                <code
+                  style="margin-left: auto; white-space: nowrap; color: #f1fa8c"
+                  >p=61, q=53</code
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span
+                  >2. Calcular <strong>n = p × q</strong>. —
+                  <em>es el número público</em></span
+                >
+                <code
+                  style="margin-left: auto; white-space: nowrap; color: #f1fa8c"
+                  >n = 3233</code
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span
+                  >3. Calcular <strong>φ(n) = (p−1)(q−1)</strong> — Función de
+                  Euler (z)</span
+                >
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span>
+                  Cuántos números entre 1 y n no comparten factores con n.
+                  <em>Permanece secreto</em></span
+                >
+                <code
+                  style="margin-left: auto; white-space: nowrap; color: #f1fa8c"
+                  >φ = 3120</code
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span
+                  >4. Elegir <strong>e (k)</strong>: Máximo común divisor con
+                  φ(n)</span
+                >
+                <code
+                  style="margin-left: auto; white-space: nowrap; color: #f1fa8c"
+                  >k = 17</code
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: flex-start;
+                  gap: 1rem;
+                  background: #282a36;
+                  padding: 1rem;
+                  border-radius: 6px;
+                "
+              >
+                <span
+                  >5. Calcular <strong>d (j)</strong>: el inverso matemático de
+                  e — cumple que <strong>k × j ≡ 1 (mod φ(n))</strong>. Es la
+                  <em>llave privada</em></span
+                >
+                <code
+                  style="margin-left: auto; white-space: nowrap; color: #f1fa8c"
+                  >d = 2753</code
+                >
+              </div>
+              <div style="display: flex; gap: 0.8rem; margin-top: 0.3rem">
+                <div
+                  style="
+                    flex: 1;
+                    background: #50fa7b22;
+                    border-radius: 6px;
+                    padding: 0.5rem 0.8rem;
+                    color: #50fa7b;
+                    text-align: center;
+                  "
+                >
+                  Llave pública: <strong>(n=3233, e=17)</strong>
+                </div>
+                <div
+                  style="
+                    flex: 1;
+                    background: #ff79c622;
+                    border-radius: 6px;
+                    padding: 0.5rem 0.8rem;
+                    color: #ff79c6;
+                    text-align: center;
+                  "
+                >
+                  Llave privada: <strong>(n=3233, d=2753)</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4.3 Cifrado y descifrado con ejemplo real -->
+          <section>
+            <h3>Cifrar y Descifrar</h3>
+            <p style="font-size: 0.85rem">
+              Todo RSA se reduce a
+              <strong>exponenciación modular</strong> con la llave correcta:
+            </p>
+            <div
+              style="
+                display: flex;
+                gap: 1rem;
+                font-size: 0.83rem;
+                margin-top: 0.6rem;
+                text-align: left;
+              "
+            >
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.9rem;
+                "
+              >
+                <div
+                  style="
+                    color: #50fa7b;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  CIFRAR — llave pública (e, n)
+                </div>
+                <code style="font-size: 1.05rem">C = M<sup>e</sup> mod n</code>
+                <hr style="border-color: #6272a4; margin: 0.6rem 0" />
+                M = 65 &nbsp;<span style="color: #6272a4"
+                  >(mensaje como número)</span
+                ><br />
+                C = 65<sup>17</sup> mod 3233 =
+                <strong style="color: #f1fa8c">2790</strong>
+                <p
+                  style="font-size: 0.72rem; color: #6272a4; margin-top: 0.5rem"
+                >
+                  Cualquier persona puede cifrar usando la llave pública.
+                </p>
+              </div>
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.9rem;
+                "
+              >
+                <div
+                  style="
+                    color: #ff79c6;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  DESCIFRAR — llave privada (d, n)
+                </div>
+                <code style="font-size: 1.05rem">M = C<sup>d</sup> mod n</code>
+                <hr style="border-color: #6272a4; margin: 0.6rem 0" />
+                C = 2790 &nbsp;<span style="color: #6272a4"
+                  >(cifrado recibido)</span
+                ><br />
+                M = 2790<sup>2753</sup> mod 3233 =
+                <strong style="color: #f1fa8c">65</strong>
+                <p
+                  style="font-size: 0.72rem; color: #6272a4; margin-top: 0.5rem"
+                >
+                  Solo quien tiene d puede descifrar.
+                </p>
+              </div>
+            </div>
+            <div
+              style="
+                font-size: 0.75rem;
+                margin-top: 0.8rem;
+                border-left: 3px solid #bd93f9;
+                padding-left: 0.7rem;
+                text-align: left;
+              "
+            >
+              <strong>¿Por qué funciona?</strong> e y d son inversos entre sí
+              mod φ(n).<br />
+              Aplicar ambos cancela la operación: M<sup>e·d</sup> ≡ M (mod n) —
+              Teorema de Euler.<br />
+              Sin d, revertir M<sup>e</sup> mod n requeriría factorizar n —
+              computacionalmente inviable.
+            </div>
+          </section>
+
+          <!-- 4.4 Limitación → puente a la librería -->
+          <section>
+            <h3>Limitación Práctica</h3>
+            <div
+              style="
+                display: flex;
+                gap: 1rem;
+                font-size: 0.82rem;
+                margin-top: 0.6rem;
+                text-align: left;
+              "
+            >
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.9rem;
+                "
+              >
+                <div
+                  style="
+                    color: #ffb86c;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  RSA solo cifra datos pequeños
+                </div>
+                RSA-2048 → módulo de <strong>256 bytes</strong><br />
+                Con padding OAEP → máximo <strong>190 bytes</strong> de datos
+                reales<br /><br />
+                No sirve para cifrar archivos, imágenes ni mensajes largos
+                directamente.
+              </div>
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.9rem;
+                "
+              >
+                <div
+                  style="
+                    color: #50fa7b;
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  Solución: cifrado híbrido
+                </div>
+                RSA cifra una <strong>clave AES</strong> de 32 bytes<br />
+                AES cifra los <strong>datos reales</strong> de cualquier
+                tamaño<br /><br />
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- 6. ESQUEMAS DE PADDING -->
+        <section>
+          <section>
+            <h2>Esquemas de Padding</h2>
+            <p>
+              El padding es crítico — RSA "textbook" sin padding es inseguro.
+            </p>
+          </section>
+          <section>
+            <h3>Glosario de Esquemas</h3>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.8rem;
+                font-size: 0.78rem;
+                text-align: left;
+              "
+            >
+              <!-- PKCS -->
+              <div
+                style="background: #282a36; border-radius: 8px; padding: 0.8rem"
+              >
+                <div
+                  style="
+                    color: #ff79c6;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.4rem;
+                  "
+                >
+                  PKCS
+                </div>
+                <div
+                  style="
+                    color: #f1fa8c;
+                    font-size: 0.72rem;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  Public Key Cryptography Standards
+                </div>
+                <p style="margin: 0; line-height: 1.5rem">
+                  Familia de estándares que especifican <em>cómo</em> usar RSA
+                  de forma interoperable. Publicados por RSA Security.<br />
+                  <strong>v1.5 (1993):</strong> legado, vulnerable.<br />
+                  <strong>v2.1 (2002):</strong> introduce OAEP y PSS.
+                </p>
+              </div>
+              <!-- OAEP -->
+              <div
+                style="background: #282a36; border-radius: 8px; padding: 0.8rem"
+              >
+                <div
+                  style="
+                    color: #50fa7b;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.4rem;
+                  "
+                >
+                  OAEP
+                </div>
+                <div
+                  style="
+                    color: #f1fa8c;
+                    font-size: 0.72rem;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  Optimal Asymmetric Encryption Padding
+                </div>
+                <p style="margin: 0; line-height: 1.5rem">
+                  Esquema de padding para <strong>cifrado</strong> RSA. Mezcla
+                  el mensaje con bytes aleatorios y una función hash antes de
+                  cifrar. El mismo mensaje produce cifrados distintos cada vez —
+                  esquema probabilístico y probablemente seguro.
+                </p>
+              </div>
+              <!-- PSS -->
+              <div
+                style="background: #282a36; border-radius: 8px; padding: 0.8rem"
+              >
+                <div
+                  style="
+                    color: #8be9fd;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.4rem;
+                  "
+                >
+                  PSS
+                </div>
+                <div
+                  style="
+                    color: #f1fa8c;
+                    font-size: 0.72rem;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  Probabilistic Signature Scheme
+                </div>
+                <p style="margin: 0; line-height: 1.5rem">
+                  Esquema de padding para <strong>firmas</strong> RSA. Agrega
+                  una sal aleatoria al proceso de firma, produciendo firmas
+                  distintas del mismo mensaje. Análogo a OAEP pero para
+                  autenticidad, no confidencialidad.
+                </p>
+              </div>
+              <!-- ECDHE -->
+              <div
+                style="background: #282a36; border-radius: 8px; padding: 0.8rem"
+              >
+                <div
+                  style="
+                    color: #bd93f9;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.4rem;
+                  "
+                >
+                  ECDHE
+                </div>
+                <div
+                  style="
+                    color: #f1fa8c;
+                    font-size: 0.72rem;
+                    margin-bottom: 0.5rem;
+                  "
+                >
+                  Elliptic Curve Diffie-Hellman Ephemeral
+                </div>
+                <p style="margin: 0; line-height: 1.5rem">
+                  Protocolo de <strong>intercambio de claves</strong> sobre
+                  curvas elípticas. Las claves son efímeras (desechadas por
+                  sesión), garantizando PFS. Reemplaza a RSA para key exchange
+                  en TLS 1.3.
+                </p>
+              </div>
+            </div>
+          </section>
+          <section>
+            <h3>PKCS#1 v1.5 — Legado y Vulnerable</h3>
+            <ul>
+              <li>Estándar de 1993 — ampliamente implementado</li>
+              <li>
+                El padding tiene formato:
+                <code>0x00 0x02 [bytes aleatorios] 0x00 [mensaje]</code>
+              </li>
+              <li>
+                <strong>Vulnerable al ataque Bleichenbacher (1998):</strong>
+                si el servidor devuelve un error diferente al recibir padding
+                inválido, un atacante puede recuperar el texto plano en ~1
+                millón de consultas
+              </li>
+              <li>
+                Variantes del ataque aún son relevantes: ROBOT (2017) afectó
+                Facebook, Paypal, F5, Citrix, etc.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Bleichenbacher — El Oráculo de Padding</h3>
+            <p style="font-size: 0.85rem; color: #8be9fd">
+              ¿Cómo recupera el atacante el texto plano en ~1 millón de
+              consultas?
+            </p>
+            <div
+              style="
+                font-family: monospace;
+                font-size: 0.8rem;
+                text-align: left;
+                background: #282a36;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                line-height: 2rem;
+                border: 1px solid #6272a4;
+              "
+            >
+              <span style="color: #ff79c6">Atacante</span> intercepta cifrado
+              <code>C</code> del handshake TLS<br />
+              <span style="color: #ffb86c">bucle</span> ×&nbsp;~1,000,000:<br />
+              &nbsp;&nbsp;<code>C' = (s<sup>e</sup> × C) mod n</code
+              >&nbsp;&nbsp;<span style="color: #6272a4"
+                >← transforma C algebraicamente</span
+              ><br />
+              &nbsp;&nbsp;<span style="color: #ff79c6">Atacante</span> → envía
+              C' al servidor<br />
+              &nbsp;&nbsp;<span style="color: #50fa7b">Servidor</span> →
+              responde una de dos:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;<code style="color: #ff5555"
+                >"RSA padding error"</code
+              >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ padding inválido
+              (descarta)<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;<code style="color: #50fa7b"
+                >"bad record MAC"</code
+              >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ padding válido
+              ✓ (info valiosa)<br />
+              &nbsp;&nbsp;<span style="color: #ff79c6">Atacante</span> estrecha
+              el rango posible de M<br />
+              <span style="color: #ff79c6">Resultado:</span> M = texto plano
+              descifrado
+            </div>
+            <p
+              style="
+                font-size: 0.75rem;
+                margin-top: 0.6rem;
+                border-left: 3px solid #ff5555;
+                padding-left: 0.6rem;
+              "
+            >
+              La distinción entre tipos de error actúa como
+              <strong>oráculo</strong>: responde preguntas de sí/no sobre M.<br />
+              OAEP + respuesta de error <em>uniforme</em> e independiente del
+              tipo de fallo cierra esta puerta.
+            </p>
+          </section>
+          <section>
+            <h3>RSA-OAEP — El Estándar Correcto para Cifrado</h3>
+            <ul>
+              <li>
+                <strong>Optimal Asymmetric Encryption Padding</strong> (PKCS#1
+                v2.1)
+              </li>
+              <li>
+                Usa una función hash y bytes aleatorios para hacer el esquema
+                probabilístico
+              </li>
+              <li>El mismo mensaje produce diferentes cifrados cada vez</li>
+              <li>Provablemente seguro bajo el modelo de oráculo aleatorio</li>
+              <li>
+                <strong>Siempre usar OAEP para cifrado RSA.</strong>
+                Nunca PKCS#1 v1.5 en sistemas nuevos
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>RSA-PSS — El Estándar Correcto para Firmas</h3>
+            <ul>
+              <li>
+                <strong>Probabilistic Signature Scheme</strong> (PKCS#1 v2.1)
+              </li>
+              <li>
+                Agrega sal aleatoria al proceso de firma — mismo mensaje, firmas
+                distintas
+              </li>
+              <li>Provablemente seguro bajo supuestos estándar</li>
+              <li>
+                <strong>Usar RSA-PSS para firmas.</strong> PKCS#1 v1.5 para
+                firmas es menos seguro aunque aún en uso (TLS legacy)
+              </li>
+            </ul>
+          </section>
+          <section>
+            <pre><code class="python">from Crypto.PublicKey import RSA
+from Crypto.Signature import pss
+from Crypto.Hash import SHA256
+
+key = RSA.generate(3072)
+mensaje = b"Documento a firmar"
+h = SHA256.new(mensaje)
+firma = pss.new(key).sign(h)  # RSA-PSS
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- 7. IMPLEMENTACIÓN -->
+        <section>
+          <section>
+            <h2>Implementación</h2>
+          </section>
+
+          <section>
+            <h2>Encriptar</h2>
+            <img src="../assets/rsa6.png" alt="RSA" height="500px" />
+          </section>
+
+          <section>
+            <h2>Encriptar</h2>
+            <img src="../assets/rsa7.png" alt="RSA" />
+          </section>
+
+          <section>
+            <h2>Desencriptar</h2>
+            <img src="../assets/rsa8.png" alt="RSA" height="500px" />
+          </section>
+
+          <section>
+            <h3>Generación de Claves (Python)</h3>
+            <pre><code class="python">from Crypto.PublicKey import RSA
+
+# Mínimo 2048 bits; recomendado 3072 bits para nuevo software
+key = RSA.generate(3072)
+private_key = key.export_key()           # Guardar cifrada con passphrase
+public_key = key.publickey().export_key()
+print("Clave privada:\n", private_key.decode())
+print("Clave pública:\n", public_key.decode())
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Cifrado con OAEP (Python)</h3>
+            <pre><code class="python">from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
+
+# Cargar clave pública del destinatario
+public_key = RSA.import_key(open("public.pem").read())
+
+# Cifrar con OAEP + SHA-256 (NO usar PKCS1_v1_5 para cifrado)
+cipher = PKCS1_OAEP.new(public_key, hashAlgo=SHA256)
+mensaje = b"Clave AES a transferir"
+cifrado = cipher.encrypt(mensaje)
+print("Cifrado:", cifrado.hex())
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Descifrado con OAEP (Python)</h3>
+            <pre><code class="python">from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
+
+# Cargar clave privada
+private_key = RSA.import_key(open("private.pem").read())
+
+# Descifrar (usa la clave privada)
+cipher = PKCS1_OAEP.new(private_key, hashAlgo=SHA256)
+mensaje = cipher.decrypt(cifrado)
+print("Mensaje:", mensaje.decode())
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- 8. SEGURIDAD Y APLICACIONES -->
+        <section>
+          <section>
+            <h2>Seguridad y Aplicaciones</h2>
+          </section>
+          <section>
+            <h3>Longitud de Clave Recomendada</h3>
+            <table style="font-size: 1.3rem">
+              <tr>
+                <th>Tamaño RSA</th>
+                <th>Bits de Seguridad</th>
+                <th>Estado (2026)</th>
+              </tr>
+              <tr>
+                <td>1024 bits</td>
+                <td>~80 bits</td>
+                <td>Inseguro</td>
+              </tr>
+              <tr>
+                <td>2048 bits</td>
+                <td>~112 bits</td>
+                <td>Mínimo aceptable</td>
+              </tr>
+              <tr>
+                <td>3072 bits</td>
+                <td>~128 bits</td>
+                <td>Recomendado</td>
+              </tr>
+              <tr>
+                <td>4096 bits</td>
+                <td>~140 bits</td>
+                <td>Alta seguridad, más lento</td>
+              </tr>
+            </table>
+            <p style="font-size: 1rem">
+              Para software nuevo, considerar Ed25519 o ECDSA-P256 en vez de RSA
+            </p>
+          </section>
+
+          <section>
+            <h3>Firmas Digitales con RSA</h3>
+            <ul>
+              <li>
+                Las firmas digitales RSA garantizan autenticidad, integridad y
+                no repudio
+              </li>
+              <li>
+                El firmante aplica hash al documento y cifra el hash con su
+                clave privada
+              </li>
+              <li>
+                Cualquiera verifica descifando la firma con la clave pública y
+                comparando con el hash del documento
+              </li>
+              <li>
+                <strong>Usar RSA-PSS</strong>, no PKCS#1 v1.5, para nuevas
+                firmas
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>RSA en TLS</h3>
+            <p>
+              En TLS 1.2 y anterior: RSA se usaba tanto para certificados como
+              para intercambio de claves — sin PFS.
+            </p>
+            <p>
+              <strong>TLS 1.3 (RFC 8446):</strong> RSA solo autentica el
+              certificado del servidor. El intercambio de claves es
+              exclusivamente ECDHE o DHE — con PFS.
+            </p>
+            <div
+              style="
+                font-size: 0.85rem;
+                text-align: left;
+                border-left: 4px solid #bd93f9;
+                padding-left: 0.8rem;
+                margin-top: 1rem;
+                line-height: 1.7rem;
+              "
+            >
+              <strong>PFS — Perfect Forward Secrecy:</strong> las claves de
+              sesión son efímeras y se descartan al cerrar la conexión.<br />
+              <span style="color: #ff5555">TLS 1.2 sin PFS:</span> capturar
+              tráfico hoy + robar clave privada del servidor mañana = descifrado
+              total de sesiones pasadas.<br />
+              <span style="color: #50fa7b">TLS 1.3 con ECDHE:</span> aunque
+              roben la clave del servidor, las sesiones pasadas son
+              irrecuperables — las claves efímeras ya no existen.
+            </div>
+          </section>
+
+          <section>
+            <h3>Flujo: Cifrado Híbrido RSA + AES</h3>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                gap: 0.8rem;
+                font-family: monospace;
+                font-size: 0.75rem;
+              "
+            >
+              <!-- EMISOR -->
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.8rem;
+                  border: 1px solid #6272a4;
+                "
+              >
+                <div
+                  style="
+                    color: #ff79c6;
+                    font-weight: bold;
+                    margin-bottom: 0.6rem;
+                    font-size: 0.85rem;
+                  "
+                >
+                  ✉️ EMISOR
+                </div>
+                <div
+                  style="
+                    background: #44475a;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    margin: 0.25rem 0;
+                  "
+                >
+                  ① <code>os.urandom(32)</code><br />
+                  <span style="color: #8be9fd">→ clave_aes (256 bits)</span>
+                </div>
+                <div style="color: #6272a4; margin: 0.1rem 0.5rem">↓</div>
+                <div
+                  style="
+                    background: #44475a;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    margin: 0.25rem 0;
+                  "
+                >
+                  ② AES-256-GCM cifra datos<br />
+                  <span style="color: #8be9fd"
+                    >→ datos_cifrados + tag + nonce</span
+                  >
+                </div>
+                <div style="color: #6272a4; margin: 0.1rem 0.5rem">↓</div>
+                <div
+                  style="
+                    background: #44475a;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    margin: 0.25rem 0;
+                  "
+                >
+                  ③ RSA-OAEP cifra clave_aes<br />
+                  <span style="color: #8be9fd">→ clave_cifrada (256 B)</span>
+                </div>
+                <div style="color: #6272a4; margin: 0.1rem 0.5rem">↓</div>
+                <div
+                  style="
+                    background: #50fa7b22;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    color: #50fa7b;
+                    font-size: 0.7rem;
+                  "
+                >
+                  📤 clave_cifrada ‖ nonce ‖ tag ‖ datos_cifrados
+                </div>
+              </div>
+              <!-- FLECHA -->
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  font-size: 1.4rem;
+                  color: #bd93f9;
+                  flex-shrink: 0;
+                "
+              >
+                ⟶
+              </div>
+              <!-- RECEPTOR -->
+              <div
+                style="
+                  flex: 1;
+                  background: #282a36;
+                  border-radius: 8px;
+                  padding: 0.8rem;
+                  border: 1px solid #6272a4;
+                "
+              >
+                <div
+                  style="
+                    color: #50fa7b;
+                    font-weight: bold;
+                    margin-bottom: 0.6rem;
+                    font-size: 0.85rem;
+                  "
+                >
+                  📥 RECEPTOR
+                </div>
+                <div
+                  style="
+                    background: #44475a;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    margin: 0.25rem 0;
+                  "
+                >
+                  ① RSA privada descifra clave_cifrada<br />
+                  <span style="color: #8be9fd">→ clave_aes</span>
+                </div>
+                <div style="color: #6272a4; margin: 0.1rem 0.5rem">↓</div>
+                <div
+                  style="
+                    background: #44475a;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    margin: 0.25rem 0;
+                  "
+                >
+                  ② AES-256-GCM descifra datos<br />
+                  <span style="color: #8be9fd"
+                    >+ verifica tag (autenticidad)</span
+                  >
+                </div>
+                <div style="color: #6272a4; margin: 0.1rem 0.5rem">↓</div>
+                <div
+                  style="
+                    background: #50fa7b22;
+                    padding: 0.4rem 0.6rem;
+                    border-radius: 4px;
+                    color: #50fa7b;
+                  "
+                >
+                  ✅ Datos originales recuperados
+                </div>
+              </div>
+            </div>
+            <p style="font-size: 0.75rem; color: #6272a4; margin-top: 0.6rem">
+              RSA opera solo sobre 32 bytes (la clave AES). AES opera sobre los
+              datos reales. Lo mejor de ambos mundos.
+            </p>
+          </section>
+
+          <section>
+            <h3>Cifrado de Clave Simétrica con RSA</h3>
+            <p>Patrón real de uso:</p>
+            <pre><code class="python">import os
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
+
+# 1. Generar clave AES de sesión
+clave_aes = os.urandom(32)  # AES-256
+
+# 2. Cifrar datos con AES (rápido)
+cipher_aes = AES.new(clave_aes, AES.MODE_GCM)
+datos_cifrados, tag = cipher_aes.encrypt_and_digest(b"Datos confidenciales grandes...")
+
+# 3. Cifrar la clave AES con RSA-OAEP (lento, pero solo 32 bytes)
+public_key = RSA.import_key(open("recipient_public.pem").read())
+cipher_rsa = PKCS1_OAEP.new(public_key, hashAlgo=SHA256)
+clave_cifrada = cipher_rsa.encrypt(clave_aes)
+
+# Transmitir: clave_cifrada + cipher_aes.nonce + tag + datos_cifrados
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- 10. ERRORES COMUNES EN RSA -->
+        <section>
+          <section>
+            <h2>Errores Comunes en RSA</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Usar PKCS#1 v1.5 para cifrado:</strong>
+                Vulnerable a Bleichenbacher. Siempre usar OAEP
+              </li>
+              <li>
+                <strong>Clave privada sin passphrase:</strong>
+                Si el archivo es robado, la clave es directamente utilizable
+              </li>
+              <li>
+                <strong>RSA "textbook" sin padding:</strong>
+                Cifrado determinístico, malleable y fácilmente atacable
+              </li>
+              <li>
+                <strong>Exponente público e = 3:</strong>
+                Si m³ &lt; n, el cifrado es trivialmente reversible con raíz
+                cúbica
+              </li>
+              <li>
+                <strong>Módulo compartido entre usuarios:</strong>
+                Si dos usuarios comparten n pero tienen diferentes e, mensajes
+                comunes pueden recuperarse con el algoritmo de Euclides
+                extendido
+              </li>
+            </ul>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>No verificar la firma RSA:</strong>
+                Solo comprobar que la función no lanzó excepción, sin validar
+                que el hash coincide con el mensaje
+              </li>
+              <li>
+                <strong>Usar MD5 o SHA-1 con RSA:</strong>
+                SHA-1 fue roto con colisiones (SHAttered, 2017). Usar SHA-256 o
+                SHA-3 mínimo
+              </li>
+              <li>
+                <strong>Generar claves con entropía baja:</strong>
+                En el boot de sistemas embebidos hay poca entropía — esperar o
+                usar hardware RNG
+              </li>
+              <li>
+                <strong>Implementar RSA desde cero:</strong>
+                Las operaciones de tiempo constante son difíciles. Usar OpenSSL,
+                libsodium o cryptography
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 11. CASOS DE USO -->
+        <section>
+          <section>
+            <h2>Casos de Uso</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Certificados X.509 / PKI:</strong> RSA-2048/3072 para
+                firmar certificados digitales en CAs
+              </li>
+              <li>
+                <strong>TLS/SSL:</strong> Autenticación de servidor
+                (certificado); intercambio de claves ahora vía ECDHE
+              </li>
+              <li>
+                <strong>Firma de Software:</strong> RSA-PSS para verificar
+                integridad de actualizaciones y binarios
+              </li>
+              <li>
+                <strong>PGP / GPG:</strong> Cifrado de correo asimétrico (en
+                desuso frente a ECC moderno)
+              </li>
+              <li>
+                <strong>SSH:</strong> Autenticación de usuarios (aunque Ed25519
+                es preferido)
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img src="../assets/rsa9.png" alt="RSA" />
+          </section>
+          <section>
+            <img src="../assets/rsa10.gif" alt="RSA" height="600px" />
+          </section>
+          <section>
+            <img src="../assets/rsa11.jpg" alt="RSA" />
+          </section>
+          <section>
+            <img src="../assets/rsa12.webp" alt="RSA" height="600px" />
+          </section>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>

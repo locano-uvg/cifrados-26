@@ -89,7 +89,7 @@ export const presentations = [
     description: "Algoritmo RSA",
     path: "temas/asimetricos/RSA/index.html",
     image: "temas/asimetricos/assets/rsa1.png",
-    active: false,
+    active: true,
   },
   {
     title: "ECC",
