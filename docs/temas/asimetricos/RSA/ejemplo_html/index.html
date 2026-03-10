@@ -1,0 +1,2644 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSA — Rivest-Shamir-Adleman</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg-card: #1c2230;
+        --bg-code: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --blue: #58a6ff;
+        --indigo: #79c0ff;
+        --purple: #bc8cff;
+        --green: #3fb950;
+        --red: #f85149;
+        --yellow: #d29922;
+        --font:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+        --mono: "Fira Code", "Cascadia Code", "Consolas", monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        line-height: 1.6;
+        font-size: 16px;
+      }
+
+      /* ── HERO ── */
+      .hero {
+        background: radial-gradient(
+          ellipse 80% 60% at 50% -10%,
+          rgba(88, 166, 255, 0.12) 0%,
+          transparent 60%
+        );
+        padding: 4rem 2rem 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse at 25% 60%,
+            rgba(88, 166, 255, 0.1) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse at 75% 40%,
+            rgba(188, 140, 255, 0.08) 0%,
+            transparent 55%
+          );
+        pointer-events: none;
+      }
+      .hero h1 {
+        font-size: clamp(3rem, 8vw, 6rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, var(--text) 30%, var(--blue) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+      }
+      .hero-sub {
+        color: var(--muted);
+        font-size: 1.1rem;
+        margin-top: 0.4rem;
+        position: relative;
+      }
+      .hero-badges {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+        position: relative;
+      }
+      .badge {
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid;
+      }
+      .badge-blue {
+        background: rgba(88, 166, 255, 0.15);
+        border-color: rgba(88, 166, 255, 0.35);
+        color: var(--blue);
+      }
+      .badge-purple {
+        background: rgba(188, 140, 255, 0.15);
+        border-color: rgba(188, 140, 255, 0.35);
+        color: var(--purple);
+      }
+      .badge-green {
+        background: rgba(63, 185, 80, 0.15);
+        border-color: rgba(63, 185, 80, 0.35);
+        color: var(--green);
+      }
+
+      /* ── TABS ── */
+      .tabs-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(13, 17, 23, 0.92);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+      }
+      .tabs-row {
+        display: flex;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        color: var(--muted);
+        padding: 0.9rem 1.4rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+        transition:
+          color 0.2s,
+          border-color 0.2s;
+        font-family: var(--font);
+      }
+      .tab-btn:hover {
+        color: var(--text);
+      }
+      .tab-btn.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+
+      /* ── CONTENT ── */
+      .content {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.active {
+        display: block;
+      }
+
+      /* ── CARDS ── */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+          opacity 0.5s,
+          transform 0.5s;
+      }
+      .card.vis {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .card h2 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.9rem;
+        background: linear-gradient(135deg, var(--blue), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--blue);
+        margin-bottom: 0.6rem;
+      }
+      .card p {
+        color: var(--muted);
+        margin-bottom: 0.6rem;
+      }
+      .card ul {
+        padding-left: 1.4rem;
+        color: var(--muted);
+      }
+      .card li {
+        margin-bottom: 0.4rem;
+      }
+      .card li strong {
+        color: var(--text);
+      }
+
+      .chip {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--blue);
+        margin-bottom: 0.45rem;
+      }
+
+      /* ── GRID ── */
+      .g2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 1.25rem;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      /* ── FORMULA ── */
+      .formula {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        font-family: var(--mono);
+        font-size: 1rem;
+        color: var(--purple);
+        text-align: center;
+        margin: 0.6rem 0;
+      }
+
+      /* ── STEPS ── */
+      .step {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.8rem;
+        align-items: flex-start;
+      }
+      .step-n {
+        flex-shrink: 0;
+        width: 1.8rem;
+        height: 1.8rem;
+        border-radius: 50%;
+        background: var(--indigo);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+      }
+      .step-body strong {
+        color: var(--blue);
+      }
+      .step-body p {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-top: 0.15rem;
+      }
+
+      /* ── ALERTS ── */
+      .alert {
+        border-radius: 0.5rem;
+        padding: 0.85rem 1.1rem;
+        margin: 0.8rem 0;
+        border-left: 3px solid;
+        font-size: 0.9rem;
+      }
+      .a-warn {
+        background: rgba(210, 153, 34, 0.08);
+        border-color: var(--yellow);
+        color: #e3b341;
+      }
+      .a-bad {
+        background: rgba(248, 81, 73, 0.08);
+        border-color: var(--red);
+        color: #ff7b72;
+      }
+      .a-good {
+        background: rgba(63, 185, 80, 0.08);
+        border-color: var(--green);
+        color: #56d364;
+      }
+      .a-info {
+        background: rgba(88, 166, 255, 0.08);
+        border-color: var(--blue);
+        color: var(--indigo);
+      }
+
+      /* ── RESULT BOX ── */
+      .rbox {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.7rem;
+        padding: 0.2rem 0;
+        overflow: hidden;
+      }
+      .rrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.55rem 1rem;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        gap: 1rem;
+      }
+      .rrow:last-child {
+        border-bottom: none;
+      }
+      .rlabel {
+        font-size: 0.82rem;
+        color: var(--muted);
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .rval {
+        font-family: var(--mono);
+        font-size: 0.9rem;
+        color: var(--blue);
+        word-break: break-all;
+        text-align: right;
+      }
+      .rval.g {
+        color: var(--green);
+      }
+      .rval.b {
+        color: var(--indigo);
+      }
+      .rval.y {
+        color: var(--yellow);
+      }
+      .rval.r {
+        color: var(--red);
+      }
+
+      /* ── INPUTS ── */
+      .igroup {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .igroup label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .igroup input {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.45rem;
+        color: var(--text);
+        padding: 0.55rem 0.85rem;
+        font-size: 0.95rem;
+        font-family: var(--font);
+        transition: border-color 0.2s;
+      }
+      .igroup input:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+      .igroup input.ok {
+        border-color: var(--green);
+      }
+      .igroup input.err {
+        border-color: var(--red);
+      }
+      .etxt {
+        color: var(--red);
+        font-size: 0.78rem;
+        margin-top: 0.2rem;
+        min-height: 1rem;
+      }
+      .cgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+
+      /* ── BUTTONS ── */
+      .btn {
+        background: var(--blue);
+        border: none;
+        border-radius: 0.45rem;
+        color: #0d1117;
+        padding: 0.6rem 1.35rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          opacity 0.2s,
+          transform 0.1s;
+        font-family: var(--font);
+      }
+      .btn:hover {
+        background: #79c0ff;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .btn-ghost:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+      }
+
+      /* ── TEXT BOXES ── */
+      .tbox {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.45rem;
+        min-height: 72px;
+        padding: 0.7rem;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        word-break: break-all;
+        white-space: pre-wrap;
+      }
+
+      /* ── TABLE ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+      th {
+        background: rgba(88, 166, 255, 0.1);
+        padding: 0.65rem 1rem;
+        text-align: left;
+        color: var(--blue);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        color: var(--muted);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* ── DIVIDER ── */
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1.25rem 0;
+      }
+
+      /* ── ATTACK CARDS ── */
+      .attack {
+        border-left: 3px solid var(--red);
+        padding-left: 0.9rem;
+        margin-bottom: 1rem;
+      }
+      .attack h4 {
+        color: #ff7b72;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        font-size: 0.95rem;
+      }
+      .attack p {
+        font-size: 0.87rem;
+        color: var(--muted);
+        margin-bottom: 0.2rem;
+      }
+      .fix {
+        color: var(--green) !important;
+        font-size: 0.84rem !important;
+      }
+
+      /* ── SVG CONTAINER ── */
+      .svg-wrap {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+      .svg-wrap svg {
+        display: block;
+        width: 100%;
+      }
+
+      /* ── STEP DOTS ── */
+      .dots {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.9rem;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .dot.on {
+        background: var(--blue);
+      }
+      .svg-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.85rem;
+        gap: 0.5rem;
+      }
+      #svg-label {
+        color: var(--muted);
+        font-size: 0.88rem;
+        text-align: center;
+        flex: 1;
+      }
+
+      /* ── CANVAS ── */
+      .cv-wrap {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+      }
+      .cv-legend {
+        display: flex;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+        padding: 0.6rem 1rem;
+        border-top: 1px solid var(--border);
+      }
+      .leg {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .leg-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+      }
+
+      /* ── CODE BLOCKS ── */
+      .codeblock {
+        background: var(--bg-code);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        margin: 0.9rem 0;
+      }
+      .codehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .codelang {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .copybtn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 0.3rem;
+        color: var(--muted);
+        padding: 0.18rem 0.55rem;
+        font-size: 0.72rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: var(--font);
+      }
+      .copybtn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+      pre {
+        padding: 1.1rem 1.25rem;
+        overflow-x: auto;
+        font-size: 0.83rem;
+        line-height: 1.75;
+      }
+      code {
+        font-family: var(--mono);
+      }
+
+      /* Syntax */
+      .kw {
+        color: #ff7b72;
+      }
+      .fn {
+        color: #79c0ff;
+      }
+      .st {
+        color: #a5d6ff;
+      }
+      .nm {
+        color: #79c0ff;
+      }
+      .cm {
+        color: #6e7681;
+        font-style: italic;
+      }
+      .cl {
+        color: #d2a8ff;
+      }
+
+      /* ── TOOLTIP ── */
+      [data-tip] {
+        cursor: help;
+        position: relative;
+      }
+      [data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.78rem;
+        color: var(--text);
+        white-space: nowrap;
+        z-index: 20;
+        pointer-events: none;
+      }
+
+      /* ── SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 600px) {
+        .hero h1 {
+          font-size: 3rem;
+        }
+        .g2,
+        .g3 {
+          grid-template-columns: 1fr;
+        }
+        .cgrid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════ HERO ═══════════════════ -->
+    <header class="hero">
+      <h1>RSA</h1>
+      <p class="hero-sub">
+        Rivest-Shamir-Adleman &mdash; Cifrado Asimétrico desde 1977
+      </p>
+      <div class="hero-badges">
+        <span class="badge badge-blue">Clave Pública / Privada</span>
+        <span class="badge badge-purple">Factorización de Primos</span>
+        <span class="badge badge-green">Mínimo 2048 bits</span>
+      </div>
+    </header>
+
+    <!-- ═══════════════════ TABS ═══════════════════ -->
+    <nav class="tabs-nav">
+      <div class="tabs-row">
+        <button class="tab-btn active" data-tab="teoria">Teoría</button>
+        <button class="tab-btn" data-tab="lab">Ejemplo</button>
+        <button class="tab-btn" data-tab="codigo">Código</button>
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- ════════════════ TAB: TEORÍA ════════════════ -->
+      <div class="tab-pane active" id="tab-teoria">
+        <div class="card">
+          <span class="chip">Definición</span>
+          <h2>¿Qué es RSA?</h2>
+          <div class="g2">
+            <div>
+              <p>
+                Algoritmo de <strong>cifrado asimétrico</strong> publicado en
+                1977 por Rivest, Shamir y Adleman (MIT). Su seguridad se basa en
+                la dificultad de
+                <strong
+                  >factorizar el producto de dos números primos grandes</strong
+                >.
+              </p>
+              <ul>
+                <li>
+                  Soporta <strong>cifrado</strong>,
+                  <strong>firmas digitales</strong> y autenticación
+                </li>
+                <li>
+                  Mínimo recomendado: <strong>2048 bits</strong>; nuevo
+                  software: <strong>3072 bits</strong>
+                </li>
+                <li>
+                  Para software moderno, considerar
+                  <strong>Ed25519 o ECDSA-P256</strong>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3>Usos en la Práctica</h3>
+              <p>
+                RSA <em>no cifra datos grandes directamente</em> en producción:
+              </p>
+              <ul>
+                <li>
+                  <strong>TLS:</strong> autentica el certificado del servidor;
+                  intercambio de claves via ECDHE desde TLS 1.3
+                </li>
+                <li>
+                  <strong>Cifrado híbrido:</strong> RSA cifra una clave AES; AES
+                  cifra los datos
+                </li>
+                <li>
+                  <strong>Firmas de código:</strong> RSA-PSS para binarios y
+                  actualizaciones
+                </li>
+                <li>
+                  <strong>SSH / PGP:</strong> autenticación (Ed25519 es
+                  preferido hoy)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="chip">Matemáticas</span>
+          <h2>Principios Matemáticos</h2>
+          <div class="g2">
+            <div>
+              <h3>Generación de Claves</h3>
+              <div class="step">
+                <div class="step-n">1</div>
+                <div class="step-body">
+                  <strong>Elegir dos primos grandes p y q</strong>
+                  <p>Ejemplo: p = 61, q = 53</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-n">2</div>
+                <div class="step-body">
+                  <strong>Módulo público: n = p × q</strong>
+                  <p>n = 61 × 53 = <strong>3233</strong></p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-n">3</div>
+                <div class="step-body">
+                  <strong>Función de Euler: φ(n) = (p−1)(q−1)</strong>
+                  <p>φ(3233) = 60 × 52 = <strong>3120</strong> (secreto)</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-n">4</div>
+                <div class="step-body">
+                  <strong>Exponente público e coprimo con φ(n)</strong>
+                  <p>
+                    gcd(17, 3120) = 1 → <strong>e = 17</strong> (típicamente
+                    65537)
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-n">5</div>
+                <div class="step-body">
+                  <strong>Exponente privado d = inverso modular de e</strong>
+                  <p>17 × d ≡ 1 (mod 3120) → <strong>d = 2753</strong></p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3>Cifrado y Descifrado</h3>
+              <div class="formula">C = M<sup>e</sup> mod n</div>
+              <p
+                style="
+                  text-align: center;
+                  font-size: 0.82rem;
+                  color: var(--muted);
+                  margin-bottom: 0.6rem;
+                "
+              >
+                Cifrado con clave pública (n, e)
+              </p>
+              <div class="formula">M = C<sup>d</sup> mod n</div>
+              <p
+                style="
+                  text-align: center;
+                  font-size: 0.82rem;
+                  color: var(--muted);
+                  margin-bottom: 0.9rem;
+                "
+              >
+                Descifrado con clave privada (n, d)
+              </p>
+              <div class="alert a-info">
+                <strong>¿Por qué funciona?</strong><br />
+                e × d ≡ 1 (mod φ(n)) garantiza que M<sup>ed</sup> ≡ M (mod n)
+                por el Teorema de Euler.
+              </div>
+              <h3 style="margin-top: 1rem">Ejemplo numérico (p=61, q=53)</h3>
+              <div class="rbox">
+                <div class="rrow">
+                  <span class="rlabel" data-tip="par de claves público"
+                    >Clave pública (n, e)</span
+                  ><span class="rval b">(3233, 17)</span>
+                </div>
+                <div class="rrow">
+                  <span class="rlabel" data-tip="exponente privado secreto"
+                    >Clave privada (n, d)</span
+                  ><span class="rval">(3233, 2753)</span>
+                </div>
+                <div class="rrow">
+                  <span class="rlabel">Cifrar M = 65</span
+                  ><span class="rval y">65¹⁷ mod 3233 = 2790</span>
+                </div>
+                <div class="rrow">
+                  <span class="rlabel">Descifrar C = 2790</span
+                  ><span class="rval g">2790²⁷⁵³ mod 3233 = 65 ✓</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr />
+          <h3>Base de la Seguridad — Factorización</h3>
+          <div class="g3">
+            <div class="alert a-bad" style="margin: 0">
+              <strong>RSA-1024</strong><br />Factorizable con ~$10M USD de
+              hardware (estimado 2010). <strong>Inseguro.</strong>
+            </div>
+            <div class="alert a-warn" style="margin: 0">
+              <strong>RSA-2048 (~112 bits)</strong><br />Mínimo aceptable.
+              Requiere >10¹⁵× más esfuerzo que RSA-1024.
+            </div>
+            <div class="alert a-good" style="margin: 0">
+              <strong>RSA-3072 (~128 bits)</strong><br />Recomendado hoy. El
+              mejor ataque clásico: General Number Field Sieve (GNFS).
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="chip">Esquemas de Padding</span>
+          <h2>Padding — Crítico para la Seguridad</h2>
+          <div class="alert a-bad">
+            <strong>RSA "Textbook" sin padding es INSEGURO:</strong> es
+            determinístico (mismo mensaje → mismo cifrado), malleable y
+            vulnerable a múltiples ataques. Nunca usar en producción.
+          </div>
+          <div class="g2">
+            <div>
+              <h3>PKCS#1 v1.5 — Legado y Vulnerable</h3>
+              <p>
+                Formato:
+                <code
+                  style="
+                    color: #f472b6;
+                    background: var(--bg-code);
+                    padding: 0.15rem 0.4rem;
+                    border-radius: 0.3rem;
+                    font-family: var(--mono);
+                  "
+                  >0x00 0x02 [rnd] 0x00 [M]</code
+                >
+              </p>
+              <ul>
+                <li>Estándar de 1993 — ampliamente implementado</li>
+                <li>
+                  <strong>Vulnerable a Bleichenbacher (1998):</strong> ~1 millón
+                  de consultas adaptativas para recuperar el texto plano si el
+                  servidor devuelve errores diferenciados
+                </li>
+                <li>
+                  ROBOT Attack (2017): afectó Facebook, PayPal, F5, Citrix,
+                  Cisco
+                </li>
+              </ul>
+              <div
+                class="alert a-bad"
+                style="margin-top: 0.6rem; font-size: 0.85rem"
+              >
+                Nunca usar PKCS#1 v1.5 para cifrado en sistemas nuevos.
+              </div>
+            </div>
+            <div>
+              <h3>RSA-OAEP — Cifrado Correcto</h3>
+              <p>
+                <strong>Optimal Asymmetric Encryption Padding</strong> (PKCS#1
+                v2.1)
+              </p>
+              <ul>
+                <li>
+                  Usa función hash + bytes aleatorios →
+                  <strong>probabilístico</strong>
+                </li>
+                <li>El mismo mensaje produce cifrados distintos cada vez</li>
+                <li>
+                  Provablemente seguro bajo el modelo de oráculo aleatorio
+                </li>
+                <li>
+                  RSA-2048+OAEP(SHA-256) → máximo 190 bytes de datos reales
+                </li>
+              </ul>
+              <hr />
+              <h3>RSA-PSS — Firmas Correctas</h3>
+              <p>
+                <strong>Probabilistic Signature Scheme</strong> (PKCS#1 v2.1)
+              </p>
+              <ul>
+                <li>Agrega sal aleatoria al proceso de firma</li>
+                <li>Mismo mensaje → firmas distintas cada vez</li>
+                <li>Provablemente seguro bajo supuestos estándar</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="chip">Seguridad</span>
+          <h2>Ataques a RSA</h2>
+          <div class="g2">
+            <div>
+              <div class="attack">
+                <h4>Bleichenbacher (1998) / ROBOT (2017)</h4>
+                <p>
+                  Si el servidor retorna errores <em>diferentes</em> según si el
+                  padding PKCS#1 v1.5 es válido, un atacante recupera el texto
+                  plano en ~1 millón de consultas adaptativas.
+                </p>
+                <p>ROBOT afectó Facebook, PayPal, F5, Citrix, Cisco.</p>
+                <p class="fix">
+                  ✓ Usar RSA-OAEP. Retornar siempre el mismo error de
+                  descifrado.
+                </p>
+              </div>
+              <div class="attack">
+                <h4>Timing Attack — Paul Kocher (1996)</h4>
+                <p>
+                  La exponenciación modular tarda distinto según los bits de d.
+                  Midiendo tiempos de muchas operaciones, se puede reconstruir
+                  la clave privada bit a bit.
+                </p>
+                <p class="fix">
+                  ✓ Implementaciones de tiempo constante (RSA blinding). Usar
+                  OpenSSL, libsodium.
+                </p>
+              </div>
+            </div>
+            <div>
+              <div class="attack">
+                <h4>Fault Attack en RSA-CRT</h4>
+                <p>
+                  RSA usa el Teorema Chino del Resto para acelerar el
+                  descifrado. Un error de hardware inyectado en un cálculo
+                  expone la clave: gcd(firma_errónea − firma_correcta, n) = p en
+                  un paso.
+                </p>
+                <p class="fix">
+                  ✓ Verificar la firma/descifrado antes de retornar el
+                  resultado.
+                </p>
+              </div>
+              <div class="attack">
+                <h4>Factores Compartidos — Lenstra (2012)</h4>
+                <p>
+                  0.2% de claves RSA en Internet compartían factores primos
+                  (routers con PRNG débil). gcd(n₁, n₂) = p revela ambas claves
+                  de inmediato.
+                </p>
+                <p class="fix">
+                  ✓ Usar CSPRNG de alta calidad. Evitar generación de claves en
+                  el arranque del sistema.
+                </p>
+              </div>
+            </div>
+          </div>
+          <hr />
+          <h3>Errores Comunes</h3>
+          <div class="g2">
+            <ul>
+              <li>
+                <strong>e = 3:</strong> si M³ &lt; n, el cifrado es reversible
+                con raíz cúbica
+              </li>
+              <li>
+                <strong>Sin passphrase en clave privada:</strong> archivo robado
+                = clave comprometida
+              </li>
+              <li>
+                <strong>MD5/SHA-1 con RSA:</strong> SHA-1 roto (SHAttered,
+                2017). Usar SHA-256 mínimo
+              </li>
+            </ul>
+            <ul>
+              <li>
+                <strong>Módulo compartido entre usuarios:</strong> mensajes
+                comunes son recuperables con el algoritmo de Euclides extendido
+              </li>
+              <li>
+                <strong>Entropía baja al arrancar:</strong> generar claves solo
+                con hardware RNG o después del arranque completo
+              </li>
+              <li>
+                <strong>Implementar RSA desde cero:</strong> tiempo constante es
+                difícil — usar OpenSSL, libsodium, cryptography
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="chip">Recomendaciones</span>
+          <h2>Longitud de Clave (2026)</h2>
+          <table>
+            <tr>
+              <th>Tamaño RSA</th>
+              <th>Bits de Seguridad</th>
+              <th>Estado</th>
+            </tr>
+            <tr>
+              <td>1024 bits</td>
+              <td>~80 bits</td>
+              <td style="color: var(--red)"><strong>Inseguro</strong></td>
+            </tr>
+            <tr>
+              <td>2048 bits</td>
+              <td>~112 bits</td>
+              <td style="color: var(--yellow)">
+                <strong>Mínimo aceptable</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>3072 bits</td>
+              <td>~128 bits</td>
+              <td style="color: var(--green)"><strong>Recomendado</strong></td>
+            </tr>
+            <tr>
+              <td>4096 bits</td>
+              <td>~140 bits</td>
+              <td style="color: var(--green)">
+                <strong>Alta seguridad, más lento</strong>
+              </td>
+            </tr>
+          </table>
+          <div class="alert a-info" style="margin-top: 1rem">
+            Para software nuevo, considerar
+            <strong>Ed25519 o ECDSA-P256</strong> en vez de RSA — misma
+            seguridad con claves mucho más cortas y operaciones más rápidas.
+          </div>
+        </div>
+      </div>
+      <!-- /tab-teoria -->
+
+      <!-- ════════════════ TAB: LABORATORIO ════════════════ -->
+      <div class="tab-pane" id="tab-lab">
+        <!-- Calculadora RSA -->
+        <div class="card">
+          <span class="chip">Calculadora Interactiva</span>
+          <h2>Generador de Claves RSA</h2>
+          <p>
+            Ingresa dos números primos distintos para calcular n, φ(n), e y d en
+            tiempo real.
+          </p>
+          <div class="cgrid">
+            <div class="igroup">
+              <label>Primo p</label>
+              <input type="number" id="inp-p" value="61" min="2" max="9999" />
+              <span class="etxt" id="err-p"></span>
+            </div>
+            <div class="igroup">
+              <label>Primo q</label>
+              <input type="number" id="inp-q" value="53" min="2" max="9999" />
+              <span class="etxt" id="err-q"></span>
+            </div>
+            <div class="igroup" style="justify-content: flex-end">
+              <div class="btn-row">
+                <button class="btn" onclick="calcRSA()">Calcular</button>
+                <button class="btn btn-ghost" onclick="randPrimes()">
+                  Aleatorio
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="calc-result" style="display: none">
+            <div class="rbox">
+              <div class="rrow">
+                <span
+                  class="rlabel"
+                  data-tip="Módulo público — producto de p y q"
+                  >n = p × q</span
+                ><span class="rval b" id="res-n">—</span>
+              </div>
+              <div class="rrow">
+                <span
+                  class="rlabel"
+                  data-tip="Función de Euler — se mantiene secreto"
+                  >φ(n) = (p−1)(q−1)</span
+                ><span class="rval" id="res-phi">—</span>
+              </div>
+              <div class="rrow">
+                <span
+                  class="rlabel"
+                  data-tip="Exponente público coprimo con φ(n)"
+                  >e (exponente público)</span
+                ><span class="rval y" id="res-e">—</span>
+              </div>
+              <div class="rrow">
+                <span
+                  class="rlabel"
+                  data-tip="Inverso modular de e — parte de la clave privada"
+                  >d (exponente privado)</span
+                ><span class="rval" id="res-d">—</span>
+              </div>
+              <div class="rrow">
+                <span class="rlabel">Clave Pública</span
+                ><span class="rval g" id="res-pub">—</span>
+              </div>
+              <div class="rrow">
+                <span class="rlabel">Clave Privada</span
+                ><span class="rval" id="res-priv">—</span>
+              </div>
+              <div class="rrow">
+                <span class="rlabel" style="font-size: 0.75rem; color: #4b5563"
+                  >Verificación e×d mod φ(n)</span
+                ><span class="rval" id="res-verify" style="font-size: 0.82rem"
+                  >—</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cifrado de texto -->
+        <div class="card">
+          <span class="chip">Demo de Cifrado / Descifrado</span>
+          <h2>Cifrar y Descifrar Texto</h2>
+          <p>
+            Usa las claves calculadas arriba para cifrar un mensaje carácter por
+            carácter (RSA textbook — solo demostración matemática).
+          </p>
+          <div class="alert a-warn">
+            <strong>⚠ Solo demostración educativa:</strong> RSA char-a-char es
+            textbook sin padding. En producción <strong>siempre</strong> usar
+            OAEP.
+          </div>
+          <div class="cgrid" style="margin-top: 0.9rem">
+            <div class="igroup">
+              <label>Mensaje (máx. 8 chars, ASCII &lt; n)</label>
+              <input type="text" id="inp-msg" value="HOLA" maxlength="8" />
+            </div>
+            <div class="igroup" style="justify-content: flex-end">
+              <div class="btn-row">
+                <button class="btn" onclick="encryptMsg()">Cifrar ↓</button>
+                <button class="btn btn-ghost" onclick="decryptMsg()">
+                  Descifrar ↑
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            id="enc-error"
+            class="alert a-bad"
+            style="display: none; margin-top: 0.6rem"
+          ></div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 1rem;
+              margin-top: 0.9rem;
+            "
+          >
+            <div>
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--muted);
+                  margin-bottom: 0.35rem;
+                "
+              >
+                ASCII del mensaje:
+              </p>
+              <div class="tbox" id="out-ascii" style="color: #60a5fa">—</div>
+            </div>
+            <div>
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--muted);
+                  margin-bottom: 0.35rem;
+                "
+              >
+                Cifrado C = M<sup>e</sup> mod n:
+              </p>
+              <div class="tbox" id="out-cipher">—</div>
+            </div>
+          </div>
+          <div
+            style="
+              text-align: center;
+              color: var(--indigo);
+              font-size: 1.3rem;
+              margin: 0.4rem 0;
+            "
+          >
+            ⇅
+          </div>
+          <div>
+            <p
+              style="
+                font-size: 0.8rem;
+                color: var(--muted);
+                margin-bottom: 0.35rem;
+              "
+            >
+              Descifrado M = C<sup>d</sup> mod n:
+            </p>
+            <div class="tbox" id="out-dec" style="color: var(--green)">—</div>
+          </div>
+        </div>
+
+        <!-- SVG Alice-Bob -->
+        <div class="card">
+          <span class="chip">Diagrama Interactivo</span>
+          <h2>Flujo Alice ↔ Bob</h2>
+          <p>
+            Navega paso a paso para ver cómo funciona el cifrado con clave
+            pública.
+          </p>
+          <div class="dots" id="svg-dots">
+            <div class="dot on" onclick="goStep(0)"></div>
+            <div class="dot" onclick="goStep(1)"></div>
+            <div class="dot" onclick="goStep(2)"></div>
+            <div class="dot" onclick="goStep(3)"></div>
+            <div class="dot" onclick="goStep(4)"></div>
+          </div>
+          <div class="svg-wrap">
+            <svg
+              id="ab-svg"
+              viewBox="0 0 800 300"
+              xmlns="http://www.w3.org/2000/svg"
+              font-family="system-ui, sans-serif"
+            >
+              <defs>
+                <marker
+                  id="arr-b"
+                  markerWidth="9"
+                  markerHeight="7"
+                  refX="8"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0,9 3.5,0 7" fill="#58a6ff" />
+                </marker>
+                <marker
+                  id="arr-y"
+                  markerWidth="9"
+                  markerHeight="7"
+                  refX="8"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0,9 3.5,0 7" fill="#f59e0b" />
+                </marker>
+                <marker
+                  id="arr-g"
+                  markerWidth="9"
+                  markerHeight="7"
+                  refX="8"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0,9 3.5,0 7" fill="#10b981" />
+                </marker>
+              </defs>
+              <rect width="800" height="300" fill="#0d1117" />
+              <!-- Alice panel -->
+              <rect
+                x="20"
+                y="45"
+                width="190"
+                height="235"
+                rx="10"
+                fill="#1e293b"
+                stroke="#334155"
+                stroke-width="1.5"
+              />
+              <text
+                x="115"
+                y="32"
+                text-anchor="middle"
+                fill="#818cf8"
+                font-size="15"
+                font-weight="bold"
+              >
+                🧑 Alice
+              </text>
+              <!-- Bob panel -->
+              <rect
+                x="590"
+                y="45"
+                width="190"
+                height="235"
+                rx="10"
+                fill="#1e293b"
+                stroke="#334155"
+                stroke-width="1.5"
+              />
+              <text
+                x="685"
+                y="32"
+                text-anchor="middle"
+                fill="#818cf8"
+                font-size="15"
+                font-weight="bold"
+              >
+                Bob 🧑
+              </text>
+              <!-- channel -->
+              <text
+                x="400"
+                y="32"
+                text-anchor="middle"
+                fill="#475569"
+                font-size="11"
+              >
+                — Canal Inseguro —
+              </text>
+              <line
+                x1="220"
+                y1="162"
+                x2="580"
+                y2="162"
+                stroke="#1e293b"
+                stroke-width="1"
+                stroke-dasharray="5,4"
+              />
+
+              <!-- STEP 0 -->
+              <g id="s0">
+                <text
+                  x="115"
+                  y="95"
+                  text-anchor="middle"
+                  fill="#94a3b8"
+                  font-size="11"
+                >
+                  Genera par de claves:
+                </text>
+                <rect
+                  x="38"
+                  y="105"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(168,85,247,.15)"
+                  stroke="rgba(168,85,247,.5)"
+                />
+                <text
+                  x="115"
+                  y="122"
+                  text-anchor="middle"
+                  fill="#c4b5fd"
+                  font-size="12"
+                >
+                  🔑 Privada (n, d)
+                </text>
+                <rect
+                  x="38"
+                  y="140"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(59,130,246,.15)"
+                  stroke="rgba(59,130,246,.5)"
+                />
+                <text
+                  x="115"
+                  y="157"
+                  text-anchor="middle"
+                  fill="#93c5fd"
+                  font-size="12"
+                >
+                  🔓 Pública (n, e)
+                </text>
+                <text
+                  x="400"
+                  y="152"
+                  text-anchor="middle"
+                  fill="#64748b"
+                  font-size="12"
+                >
+                  Alice genera su par de claves:
+                </text>
+                <text
+                  x="400"
+                  y="170"
+                  text-anchor="middle"
+                  fill="#64748b"
+                  font-size="11"
+                >
+                  n = p×q &nbsp;|&nbsp; φ(n) = (p−1)(q−1)
+                </text>
+                <text
+                  x="400"
+                  y="185"
+                  text-anchor="middle"
+                  fill="#64748b"
+                  font-size="11"
+                >
+                  e coprimo con φ(n) &nbsp;|&nbsp; d = e⁻¹ mod φ(n)
+                </text>
+              </g>
+
+              <!-- STEP 1 -->
+              <g id="s1" visibility="hidden">
+                <rect
+                  x="38"
+                  y="105"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(168,85,247,.15)"
+                  stroke="rgba(168,85,247,.5)"
+                />
+                <text
+                  x="115"
+                  y="122"
+                  text-anchor="middle"
+                  fill="#c4b5fd"
+                  font-size="12"
+                >
+                  🔑 Privada — guardada
+                </text>
+                <rect
+                  x="38"
+                  y="140"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(59,130,246,.3)"
+                  stroke="rgba(59,130,246,.8)"
+                />
+                <text
+                  x="115"
+                  y="157"
+                  text-anchor="middle"
+                  fill="#93c5fd"
+                  font-size="12"
+                >
+                  🔓 Pública (n, e)
+                </text>
+                <path
+                  d="M 215 150 L 570 150"
+                  stroke="#58a6ff"
+                  stroke-width="2"
+                  fill="none"
+                  marker-end="url(#arr-b)"
+                />
+                <rect
+                  x="280"
+                  y="134"
+                  width="145"
+                  height="22"
+                  rx="5"
+                  fill="rgba(59,130,246,.18)"
+                />
+                <text
+                  x="352"
+                  y="149"
+                  text-anchor="middle"
+                  fill="#93c5fd"
+                  font-size="11"
+                >
+                  🔓 Clave Pública de Alice
+                </text>
+                <rect
+                  x="608"
+                  y="105"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(59,130,246,.15)"
+                  stroke="rgba(59,130,246,.5)"
+                />
+                <text
+                  x="685"
+                  y="122"
+                  text-anchor="middle"
+                  fill="#93c5fd"
+                  font-size="12"
+                >
+                  🔓 Clave Pública Alice
+                </text>
+              </g>
+
+              <!-- STEP 2 -->
+              <g id="s2" visibility="hidden">
+                <rect
+                  x="38"
+                  y="105"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(168,85,247,.15)"
+                  stroke="rgba(168,85,247,.5)"
+                />
+                <text
+                  x="115"
+                  y="122"
+                  text-anchor="middle"
+                  fill="#c4b5fd"
+                  font-size="12"
+                >
+                  🔑 Privada — guardada
+                </text>
+                <rect
+                  x="608"
+                  y="72"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(16,185,129,.15)"
+                  stroke="rgba(16,185,129,.5)"
+                />
+                <text
+                  x="685"
+                  y="89"
+                  text-anchor="middle"
+                  fill="#6ee7b7"
+                  font-size="12"
+                >
+                  📝 Mensaje: "Hola"
+                </text>
+                <rect
+                  x="608"
+                  y="108"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(59,130,246,.15)"
+                  stroke="rgba(59,130,246,.5)"
+                />
+                <text
+                  x="685"
+                  y="125"
+                  text-anchor="middle"
+                  fill="#93c5fd"
+                  font-size="12"
+                >
+                  🔓 Clave pública Alice
+                </text>
+                <text
+                  x="685"
+                  y="158"
+                  text-anchor="middle"
+                  fill="#f59e0b"
+                  font-size="12"
+                >
+                  C = M^e mod n
+                </text>
+                <rect
+                  x="608"
+                  y="168"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(245,158,11,.15)"
+                  stroke="rgba(245,158,11,.5)"
+                />
+                <text
+                  x="685"
+                  y="185"
+                  text-anchor="middle"
+                  fill="#fcd34d"
+                  font-size="12"
+                >
+                  🔒 Ciphertext C
+                </text>
+              </g>
+
+              <!-- STEP 3 -->
+              <g id="s3" visibility="hidden">
+                <rect
+                  x="38"
+                  y="105"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(168,85,247,.15)"
+                  stroke="rgba(168,85,247,.5)"
+                />
+                <text
+                  x="115"
+                  y="122"
+                  text-anchor="middle"
+                  fill="#c4b5fd"
+                  font-size="12"
+                >
+                  🔑 Privada — guardada
+                </text>
+                <rect
+                  x="608"
+                  y="168"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(245,158,11,.15)"
+                  stroke="rgba(245,158,11,.5)"
+                />
+                <text
+                  x="685"
+                  y="185"
+                  text-anchor="middle"
+                  fill="#fcd34d"
+                  font-size="12"
+                >
+                  🔒 Enviando C…
+                </text>
+                <path
+                  d="M 580 185 L 228 185"
+                  stroke="#f59e0b"
+                  stroke-width="2"
+                  fill="none"
+                  marker-end="url(#arr-y)"
+                />
+                <rect
+                  x="290"
+                  y="169"
+                  width="130"
+                  height="20"
+                  rx="4"
+                  fill="rgba(245,158,11,.15)"
+                />
+                <text
+                  x="355"
+                  y="183"
+                  text-anchor="middle"
+                  fill="#fcd34d"
+                  font-size="10"
+                >
+                  🔒 Ciphertext (público)
+                </text>
+                <rect
+                  x="38"
+                  y="195"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(245,158,11,.15)"
+                  stroke="rgba(245,158,11,.5)"
+                />
+                <text
+                  x="115"
+                  y="212"
+                  text-anchor="middle"
+                  fill="#fcd34d"
+                  font-size="12"
+                >
+                  🔒 Recibe C
+                </text>
+              </g>
+
+              <!-- STEP 4 -->
+              <g id="s4" visibility="hidden">
+                <rect
+                  x="38"
+                  y="72"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(168,85,247,.3)"
+                  stroke="rgba(168,85,247,.8)"
+                />
+                <text
+                  x="115"
+                  y="89"
+                  text-anchor="middle"
+                  fill="#c4b5fd"
+                  font-size="12"
+                >
+                  🔑 Clave Privada (d)
+                </text>
+                <rect
+                  x="38"
+                  y="108"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(245,158,11,.15)"
+                  stroke="rgba(245,158,11,.5)"
+                />
+                <text
+                  x="115"
+                  y="125"
+                  text-anchor="middle"
+                  fill="#fcd34d"
+                  font-size="12"
+                >
+                  🔒 Ciphertext C
+                </text>
+                <text
+                  x="115"
+                  y="158"
+                  text-anchor="middle"
+                  fill="#f59e0b"
+                  font-size="12"
+                >
+                  M = C^d mod n
+                </text>
+                <rect
+                  x="38"
+                  y="168"
+                  width="154"
+                  height="26"
+                  rx="6"
+                  fill="rgba(16,185,129,.25)"
+                  stroke="rgba(16,185,129,.7)"
+                />
+                <text
+                  x="115"
+                  y="185"
+                  text-anchor="middle"
+                  fill="#6ee7b7"
+                  font-size="12"
+                >
+                  📝 "Hola" — ¡Descifrado! ✓
+                </text>
+                <text
+                  x="400"
+                  y="145"
+                  text-anchor="middle"
+                  fill="#94a3b8"
+                  font-size="13"
+                  font-weight="bold"
+                >
+                  Solo Alice puede descifrar
+                </text>
+                <text
+                  x="400"
+                  y="165"
+                  text-anchor="middle"
+                  fill="#475569"
+                  font-size="11"
+                >
+                  La clave privada nunca viajó por la red.
+                </text>
+                <text
+                  x="400"
+                  y="182"
+                  text-anchor="middle"
+                  fill="#475569"
+                  font-size="11"
+                >
+                  El canal puede ser totalmente inseguro.
+                </text>
+              </g>
+            </svg>
+          </div>
+          <div class="svg-footer">
+            <button
+              class="btn btn-ghost"
+              id="sv-prev"
+              onclick="prevStep()"
+              disabled
+            >
+              ← Anterior
+            </button>
+            <span id="svg-label">Paso 1 de 5</span>
+            <button class="btn" id="sv-next" onclick="nextStep()">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas OAEP -->
+        <div class="card">
+          <span class="chip">Visualizador de Padding</span>
+          <h2>Simulador OAEP</h2>
+          <p>
+            Visualiza cómo OAEP transforma un mensaje corto en un bloque
+            completo de datos antes del cifrado RSA (RSA-2048 = 256 bytes por
+            bloque).
+          </p>
+          <div class="cgrid" style="margin-bottom: 0.9rem">
+            <div class="igroup">
+              <label>Mensaje de entrada</label>
+              <input
+                type="text"
+                id="oaep-in"
+                value="Clave AES"
+                maxlength="20"
+              />
+            </div>
+            <div class="igroup" style="justify-content: flex-end">
+              <button class="btn" onclick="drawOAEP()">
+                Visualizar Padding
+              </button>
+            </div>
+          </div>
+          <div class="cv-wrap">
+            <canvas id="oaep-cv" height="310"></canvas>
+            <div class="cv-legend">
+              <div class="leg">
+                <div class="leg-dot" style="background: #58a6ff"></div>
+                Mensaje (M)
+              </div>
+              <div class="leg">
+                <div class="leg-dot" style="background: #f59e0b"></div>
+                Seed aleatorio
+              </div>
+              <div class="leg">
+                <div class="leg-dot" style="background: #a855f7"></div>
+                lHash / MGF
+              </div>
+              <div class="leg">
+                <div class="leg-dot" style="background: #ef4444"></div>
+                Byte separador 0x01
+              </div>
+              <div class="leg">
+                <div
+                  class="leg-dot"
+                  style="background: #1e293b; border: 1px solid #334155"
+                ></div>
+                Padding (0x00)
+              </div>
+              <div class="leg">
+                <div class="leg-dot" style="background: #10b981"></div>
+                Bloque final cifrado
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /tab-lab -->
+
+      <!-- ════════════════ TAB: CÓDIGO ════════════════ -->
+      <div class="tab-pane" id="tab-codigo">
+        <div class="card">
+          <span class="chip">Código</span>
+          <h2>Implementación con PyCryptodome</h2>
+          <p>
+            Instalar:
+            <code
+              style="
+                color: #86efac;
+                background: var(--bg-code);
+                padding: 0.15rem 0.5rem;
+                border-radius: 0.3rem;
+                font-family: var(--mono);
+              "
+              >pip install pycryptodome</code
+            >
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>1. Generación de Claves RSA</h3>
+          <div class="codeblock">
+            <div class="codehead">
+              <span class="codelang">Python</span
+              ><button class="copybtn" onclick="doCopy(this)">Copiar</button>
+            </div>
+            <pre><code id="c1"></code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>2. Cifrado con OAEP (Recomendado)</h3>
+          <div class="codeblock">
+            <div class="codehead">
+              <span class="codelang">Python</span
+              ><button class="copybtn" onclick="doCopy(this)">Copiar</button>
+            </div>
+            <pre><code id="c2"></code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>3. Firma Digital con PSS</h3>
+          <div class="codeblock">
+            <div class="codehead">
+              <span class="codelang">Python</span
+              ><button class="copybtn" onclick="doCopy(this)">Copiar</button>
+            </div>
+            <pre><code id="c3"></code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>4. RSA Manual / Textbook (Solo Educativo)</h3>
+          <div class="alert a-warn">
+            <strong>⚠ Solo para aprendizaje.</strong> No usar en producción —
+            sin padding, sin operaciones de tiempo constante.
+          </div>
+          <div class="codeblock">
+            <div class="codehead">
+              <span class="codelang">Python</span
+              ><button class="copybtn" onclick="doCopy(this)">Copiar</button>
+            </div>
+            <pre><code id="c4"></code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>5. Cifrado Híbrido RSA + AES (Patrón de Producción)</h3>
+          <div class="codeblock">
+            <div class="codehead">
+              <span class="codelang">Python</span
+              ><button class="copybtn" onclick="doCopy(this)">Copiar</button>
+            </div>
+            <pre><code id="c5"></code></pre>
+          </div>
+        </div>
+      </div>
+      <!-- /tab-codigo -->
+    </main>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════
+      //  RSA MATH — BigInt
+      // ═══════════════════════════════════════════════════════════
+
+      function gcd(a, b) {
+        a = BigInt(a);
+        b = BigInt(b);
+        while (b) {
+          [a, b] = [b, a % b];
+        }
+        return a;
+      }
+
+      function modInverse(a, m) {
+        a = BigInt(a);
+        m = BigInt(m);
+        let [or, r] = [a, m],
+          [os, s] = [1n, 0n];
+        while (r !== 0n) {
+          const q = or / r;
+          [or, r] = [r, or - q * r];
+          [os, s] = [s, os - q * s];
+        }
+        return os < 0n ? os + m : os;
+      }
+
+      function modPow(base, exp, mod) {
+        base = BigInt(base);
+        exp = BigInt(exp);
+        mod = BigInt(mod);
+        let r = 1n;
+        base %= mod;
+        while (exp > 0n) {
+          if (exp & 1n) r = (r * base) % mod;
+          exp >>= 1n;
+          base = (base * base) % mod;
+        }
+        return r;
+      }
+
+      function isPrime(n) {
+        n = BigInt(n);
+        if (n < 2n) return false;
+        if (n === 2n) return true;
+        if (n % 2n === 0n) return false;
+        for (let i = 3n; i * i <= n; i += 2n) if (n % i === 0n) return false;
+        return true;
+      }
+
+      function findE(phi) {
+        for (const e of [65537n, 17n, 13n, 11n, 7n, 5n, 3n])
+          if (e < phi && gcd(e, phi) === 1n) return e;
+        for (let e = 2n; e < phi; e++) if (gcd(e, phi) === 1n) return e;
+        return null;
+      }
+
+      const PRIMES = [
+        11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79,
+        83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157,
+        163, 167, 173,
+      ];
+
+      // ═══════════════════════════════════════════════════════════
+      //  CALCULATOR
+      // ═══════════════════════════════════════════════════════════
+
+      let rsa = { n: 0n, e: 0n, d: 0n, ok: false };
+
+      function calcRSA() {
+        const pv = document.getElementById("inp-p").value;
+        const qv = document.getElementById("inp-q").value;
+        const ep = document.getElementById("err-p");
+        const eq = document.getElementById("err-q");
+        const ip = document.getElementById("inp-p");
+        const iq = document.getElementById("inp-q");
+
+        ep.textContent = "";
+        eq.textContent = "";
+        ip.className = "";
+        iq.className = "";
+
+        let p,
+          q,
+          ok = true;
+        try {
+          p = BigInt(Math.round(parseFloat(pv)));
+          if (!isPrime(p)) {
+            ep.textContent = "No es primo";
+            ip.className = "err";
+            ok = false;
+          } else ip.className = "ok";
+        } catch {
+          ep.textContent = "Número inválido";
+          ip.className = "err";
+          ok = false;
+        }
+        try {
+          q = BigInt(Math.round(parseFloat(qv)));
+          if (!isPrime(q)) {
+            eq.textContent = "No es primo";
+            iq.className = "err";
+            ok = false;
+          } else iq.className = "ok";
+        } catch {
+          eq.textContent = "Número inválido";
+          iq.className = "err";
+          ok = false;
+        }
+
+        if (!ok) {
+          rsa.ok = false;
+          return;
+        }
+        if (p === q) {
+          eq.textContent = "p y q deben ser distintos";
+          iq.className = "err";
+          rsa.ok = false;
+          return;
+        }
+
+        const n = p * q;
+        const phi = (p - 1n) * (q - 1n);
+        const e = findE(phi);
+        if (!e) {
+          ep.textContent = "No se pudo encontrar e — usa otros primos";
+          rsa.ok = false;
+          return;
+        }
+        const d = modInverse(e, phi);
+        const ver = (e * d) % phi;
+
+        rsa = { n, e, d, ok: true };
+
+        document.getElementById("res-n").textContent = n.toString();
+        document.getElementById("res-phi").textContent = phi.toString();
+        document.getElementById("res-e").textContent = e.toString();
+        document.getElementById("res-d").textContent = d.toString();
+        document.getElementById("res-pub").textContent = `(n=${n}, e=${e})`;
+        document.getElementById("res-priv").textContent = `(n=${n}, d=${d})`;
+        const vEl = document.getElementById("res-verify");
+        vEl.textContent = `${e} × ${d} mod ${phi} = ${ver} ${ver === 1n ? "✓" : "✗"}`;
+        vEl.style.color = ver === 1n ? "var(--green)" : "var(--red)";
+        document.getElementById("calc-result").style.display = "block";
+      }
+
+      function randPrimes() {
+        let i = Math.floor(Math.random() * PRIMES.length),
+          j;
+        do {
+          j = Math.floor(Math.random() * PRIMES.length);
+        } while (j === i);
+        document.getElementById("inp-p").value = PRIMES[i];
+        document.getElementById("inp-q").value = PRIMES[j];
+        calcRSA();
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  ENCRYPT / DECRYPT
+      // ═══════════════════════════════════════════════════════════
+
+      let lastCipher = [];
+
+      function encryptMsg() {
+        const errEl = document.getElementById("enc-error");
+        errEl.style.display = "none";
+        if (!rsa.ok) {
+          errEl.textContent = "Primero calcula las claves RSA.";
+          errEl.style.display = "block";
+          return;
+        }
+        const msg = document.getElementById("inp-msg").value;
+        if (!msg) return;
+
+        const { n, e } = rsa;
+        const asc = [],
+          cph = [];
+        for (const ch of msg) {
+          const m = BigInt(ch.charCodeAt(0));
+          if (m >= n) {
+            errEl.textContent = `El código ASCII de '${ch}' (${m}) ≥ n (${n}). Usa primos más grandes (ej. 127 y 131) o un mensaje diferente.`;
+            errEl.style.display = "block";
+            return;
+          }
+          asc.push(m.toString());
+          cph.push(modPow(m, e, n).toString());
+        }
+        lastCipher = cph.map((v) => BigInt(v));
+        document.getElementById("out-ascii").textContent =
+          `"${msg}"\n→ [${asc.join(", ")}]`;
+        document.getElementById("out-cipher").textContent =
+          `[${cph.join(", ")}]`;
+        document.getElementById("out-dec").textContent =
+          "— (haz clic en Descifrar)";
+      }
+
+      function decryptMsg() {
+        const errEl = document.getElementById("enc-error");
+        errEl.style.display = "none";
+        if (!rsa.ok) {
+          errEl.textContent = "Primero calcula las claves RSA.";
+          errEl.style.display = "block";
+          return;
+        }
+        if (!lastCipher.length) {
+          errEl.textContent = "Primero cifra un mensaje.";
+          errEl.style.display = "block";
+          return;
+        }
+        const { n, d } = rsa;
+        let result = "";
+        for (const c of lastCipher)
+          result += String.fromCharCode(Number(modPow(c, d, n)));
+        document.getElementById("out-dec").textContent =
+          `[${lastCipher.join(", ")}]\n→ "${result}"`;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  SVG ALICE-BOB
+      // ═══════════════════════════════════════════════════════════
+
+      const STEP_LABELS = [
+        "Paso 1/5 — Alice genera su par de claves RSA (pública y privada)",
+        "Paso 2/5 — Alice publica su clave pública: cualquiera puede usarla",
+        "Paso 3/5 — Bob cifra el mensaje con la clave pública de Alice",
+        "Paso 4/5 — Bob envía el ciphertext por el canal inseguro",
+        "Paso 5/5 — Alice descifra el ciphertext con su clave privada ✓",
+      ];
+
+      let curStep = 0;
+
+      function goStep(s) {
+        for (let i = 0; i < 5; i++) {
+          const el = document.getElementById(`s${i}`);
+          if (el) el.setAttribute("visibility", i === s ? "visible" : "hidden");
+          const d = document.querySelectorAll("#svg-dots .dot")[i];
+          if (d) d.classList.toggle("on", i === s);
+        }
+        curStep = s;
+        document.getElementById("svg-label").textContent = STEP_LABELS[s];
+        document.getElementById("sv-prev").disabled = s === 0;
+        document.getElementById("sv-next").disabled = s === 4;
+        document.getElementById("sv-next").textContent =
+          s === 4 ? "Reiniciar ↺" : "Siguiente →";
+      }
+
+      function nextStep() {
+        curStep < 4 ? goStep(curStep + 1) : goStep(0);
+      }
+      function prevStep() {
+        if (curStep > 0) goStep(curStep - 1);
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  CANVAS OAEP
+      // ═══════════════════════════════════════════════════════════
+
+      function drawOAEP() {
+        const cv = document.getElementById("oaep-cv");
+        const ctx = cv.getContext("2d");
+        const W = cv.parentElement.clientWidth;
+        cv.width = W;
+        cv.height = 310;
+
+        const msg = document.getElementById("oaep-in").value || "Clave AES";
+        const msgB = Array.from(msg).map((c) => c.charCodeAt(0));
+        const TOTAL = 48; // display block size (simplified, real RSA-2048 = 256 bytes)
+        const HLEN = 8; // simplified hash len (real SHA-256 = 32)
+        const MSGLEN = Math.min(msgB.length, TOTAL - 2 * HLEN - 2);
+
+        const C = {
+          msg: "#58a6ff",
+          seed: "#f59e0b",
+          hash: "#a855f7",
+          sep: "#ef4444",
+          pad: "#1e293b",
+          oaep: "#10b981",
+          bg: "#0d1117",
+          border: "#334155",
+        };
+
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, W, 310);
+
+        const PAD = 16;
+        const RW = W - PAD * 2;
+        const BW = RW / TOTAL;
+        const ROW_H = 28;
+
+        const rand = () => Math.floor(Math.random() * 256);
+
+        function drawRow(label, y, colorFn, bytes) {
+          ctx.fillStyle = "#64748b";
+          ctx.font = "11px system-ui";
+          ctx.fillText(label, PAD, y - 6);
+          for (let i = 0; i < TOTAL; i++) {
+            ctx.fillStyle = colorFn(i);
+            ctx.fillRect(PAD + i * BW, y, BW - 1, ROW_H);
+            if (BW > 14 && bytes && bytes[i] !== undefined) {
+              ctx.fillStyle = "rgba(255,255,255,.7)";
+              ctx.font = "8px monospace";
+              ctx.fillText(
+                bytes[i].toString(16).padStart(2, "0"),
+                PAD + i * BW + 2,
+                y + 18,
+              );
+            }
+          }
+        }
+
+        // Row 1 — DB structure: [lHash | PS zeros | 0x01 | M]
+        const db = new Array(TOTAL - 1 - HLEN).fill(0);
+        for (let i = 0; i < HLEN; i++) db[i] = rand(); // lHash
+        const psEnd = db.length - MSGLEN - 1;
+        db[psEnd] = 0x01; // separator
+        msgB.slice(0, MSGLEN).forEach((b, i) => (db[psEnd + 1 + i] = b));
+
+        const dbRow = [0x00, ...new Array(HLEN).fill(0).map(rand), ...db];
+
+        drawRow(
+          "1. Estructura DB: [ 0x00 | seed(rnd) | lHash | PS zeros | 0x01 | Mensaje M ]",
+          30,
+          (i) => {
+            if (i === 0) return "#1e293b";
+            if (i <= HLEN) return C.seed;
+            if (i <= HLEN + HLEN) return C.hash;
+            const di = i - 1 - HLEN;
+            if (di >= 0 && di < db.length) {
+              if (di < HLEN) return C.hash;
+              if (di === psEnd) return C.sep;
+              if (di > psEnd) return C.msg;
+            }
+            return C.pad;
+          },
+          dbRow,
+        );
+
+        // Row 2 — Random seed
+        const seed = Array.from({ length: TOTAL }, (_, i) =>
+          i < HLEN ? rand() : 0,
+        );
+        drawRow(
+          "2. Seed aleatorio generado por el remitente",
+          90,
+          (i) => (i < HLEN ? C.seed : "transparent"),
+          seed,
+        );
+
+        // Row 3 — MGF(seed) XOR DB → maskedDB
+        const mgfSeed = Array.from({ length: TOTAL }, () => rand());
+        const maskedDB = dbRow.map((b, i) => (b ^ mgfSeed[i]) & 0xff);
+        drawRow(
+          "3. maskedDB = DB ⊕ MGF(seed)  →  apariencia pseudoaleatoria",
+          150,
+          (i) => {
+            const ci = i < HLEN ? C.hash : C.oaep;
+            return i >= TOTAL ? "transparent" : ci;
+          },
+          maskedDB,
+        );
+
+        // Row 4 — MGF(maskedDB) XOR seed → maskedSeed
+        const mgfDB = Array.from({ length: TOTAL }, () => rand());
+        const maskedSeed = seed.map((b, i) => (b ^ mgfDB[i]) & 0xff);
+        const finalBlock = [
+          0x00,
+          ...maskedSeed.slice(0, HLEN),
+          ...maskedDB.slice(HLEN),
+        ];
+        drawRow(
+          "4. Bloque OAEP final: [ 0x00 | maskedSeed | maskedDB ]  →  listo para C = M^e mod n",
+          210,
+          (i) => C.oaep,
+          finalBlock,
+        );
+
+        // Labels
+        ctx.fillStyle = "#475569";
+        ctx.font = "10px system-ui";
+        const lx = (i) => PAD + i * BW + BW / 2;
+        // Row 1 region labels
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "bold 9px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("seed", lx(HLEN / 2), 30 + ROW_H + 12);
+        ctx.fillText("lHash", lx(HLEN + HLEN / 2), 30 + ROW_H + 12);
+        ctx.fillText(
+          "← PS (zeros) →",
+          lx(1 + 2 * HLEN + (psEnd - HLEN) / 2),
+          30 + ROW_H + 12,
+        );
+        ctx.fillText(
+          "M",
+          lx(1 + HLEN + psEnd + MSGLEN / 2 + 1),
+          30 + ROW_H + 12,
+        );
+        ctx.textAlign = "left";
+
+        // Arrow between rows
+        const arrowY = [76, 136, 196];
+        arrowY.forEach((ay) => {
+          ctx.strokeStyle = "#334155";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(W / 2, ay);
+          ctx.lineTo(W / 2, ay + 8);
+          ctx.stroke();
+          ctx.fillStyle = "#334155";
+          ctx.beginPath();
+          ctx.moveTo(W / 2 - 4, ay + 8);
+          ctx.lineTo(W / 2 + 4, ay + 8);
+          ctx.lineTo(W / 2, ay + 14);
+          ctx.fill();
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  TABS
+      // ═══════════════════════════════════════════════════════════
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll(".tab-pane")
+            .forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          const pane = document.getElementById(`tab-${btn.dataset.tab}`);
+          pane.classList.add("active");
+          pane.querySelectorAll(".card").forEach((c) => {
+            c.classList.remove("vis");
+            setTimeout(() => obs.observe(c), 20);
+          });
+          if (btn.dataset.tab === "lab") {
+            setTimeout(drawOAEP, 150);
+            if (!rsa.ok) calcRSA();
+          }
+        });
+      });
+
+      // ═══════════════════════════════════════════════════════════
+      //  INTERSECTION OBSERVER
+      // ═══════════════════════════════════════════════════════════
+
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) e.target.classList.add("vis");
+          });
+        },
+        { threshold: 0.08 },
+      );
+
+      document.querySelectorAll(".card").forEach((c) => obs.observe(c));
+
+      // ═══════════════════════════════════════════════════════════
+      //  COPY CODE
+      // ═══════════════════════════════════════════════════════════
+
+      function doCopy(btn) {
+        const pre = btn.closest(".codeblock").querySelector("pre");
+        navigator.clipboard.writeText(pre.innerText).then(() => {
+          btn.textContent = "✓ Copiado";
+          setTimeout(() => (btn.textContent = "Copiar"), 2000);
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  SYNTAX HIGHLIGHT
+      // ═══════════════════════════════════════════════════════════
+
+      function esc(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function hi(raw) {
+        let s = esc(raw);
+        // comments first (line level)
+        s = s.replace(/(#[^\n]*)/g, "$1");
+        // byte strings b"..." b'...'
+        s = s.replace(/\bb("[^"]*"|'[^']*')/g, '<span class="st">b$1</span>');
+        // strings
+        s = s.replace(/("[^"]*"|'[^']*')/g, '<span class="st">$1</span>');
+        // keywords
+        s = s.replace(
+          /\b(import|from|as|def|return|if|else|elif|for|in|with|open|True|False|None|try|except|raise|pass)\b/g,
+          '<span class="kw">$1</span>',
+        );
+        // builtins / common calls
+        s = s.replace(
+          /\b(print|len|bytes|str|int|hex|open|os|urandom)\b/g,
+          '<span class="fn">$1</span>',
+        );
+        // class-like identifiers (UpperCase start)
+        s = s.replace(
+          /\b([A-Z][A-Z0-9_]{2,})\b/g,
+          '<span class="cl">$1</span>',
+        );
+        // numbers
+        s = s.replace(/\b(\d+)\b/g, '<span class="nm">$1</span>');
+        return s;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      //  CODE SNIPPETS
+      // ═══════════════════════════════════════════════════════════
+
+      const CODES = {
+        c1: `from Crypto.PublicKey import RSA
+
+# Mínimo 2048 bits; recomendado 3072 bits para nuevo software
+key = RSA.generate(3072)
+
+# Exportar en formato PEM
+private_key = key.export_key()           # Guardar cifrada con passphrase
+public_key  = key.publickey().export_key()
+
+# Persistir en disco
+with open("private.pem", "wb") as f:
+    f.write(private_key)
+with open("public.pem", "wb") as f:
+    f.write(public_key)
+
+print("Clave privada:")
+print(private_key.decode())
+print("\\nClave pública:")
+print(public_key.decode())`,
+
+        c2: `from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA256
+
+# ── CIFRADO (con clave pública del destinatario) ────────────
+public_key = RSA.import_key(open("public.pem").read())
+
+# NUNCA usar PKCS1_v1_5 para cifrado — vulnerable a Bleichenbacher
+cipher = PKCS1_OAEP.new(public_key, hashAlgo=SHA256)
+mensaje  = b"Clave AES a transferir"
+cifrado  = cipher.encrypt(mensaje)
+print("Cifrado (hex):", cifrado.hex())
+
+# ── DESCIFRADO (con clave privada propia) ───────────────────
+private_key = RSA.import_key(open("private.pem").read())
+cipher_dec  = PKCS1_OAEP.new(private_key, hashAlgo=SHA256)
+original    = cipher_dec.decrypt(cifrado)
+print("Descifrado:", original.decode())`,
+
+        c3: `from Crypto.PublicKey import RSA
+from Crypto.Signature import pss
+from Crypto.Hash import SHA256
+
+key     = RSA.generate(3072)
+mensaje = b"Documento a firmar"
+
+# ── FIRMAR (clave privada) ──────────────────────────────────
+h     = SHA256.new(mensaje)
+firma = pss.new(key).sign(h)         # RSA-PSS con sal aleatoria
+print("Firma (hex):", firma.hex())
+
+# ── VERIFICAR (clave pública) ───────────────────────────────
+pub = key.publickey()
+h2  = SHA256.new(mensaje)
+try:
+    pss.new(pub).verify(h2, firma)
+    print("Firma válida")
+except (ValueError, TypeError):
+    print("Firma INVÁLIDA")`,
+
+        c4: `# RSA Textbook — SOLO EDUCATIVO
+# Basado en: Ejemplos/examples/4.asimetricos/rsa/manual_rsa/
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def modinv(a, m):
+    m0, x0, x1 = m, 0, 1
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    return x1 + m0 if x1 < 0 else x1
+
+# Parámetros de ejemplo
+p, q = 61, 53
+n    = p * q               # 3233  — módulo público
+phi  = (p - 1) * (q - 1)  # 3120  — secreto
+e    = 17                  # gcd(17, 3120) = 1
+d    = modinv(e, phi)      # 2753
+
+print(f"n={n}  e={e}  d={d}")
+print(f"Clave pública:  (n={n}, e={e})")
+print(f"Clave privada:  (n={n}, d={d})")
+
+# Cifrado textbook (sin padding — SOLO DEMOSTRATIVO)
+def encrypt(M, e, n):
+    return pow(M, e, n)   # C = M^e mod n
+
+def decrypt(C, d, n):
+    return pow(C, d, n)   # M = C^d mod n
+
+# Cifrar por caracteres
+mensaje = "HOLA"
+cifrado = [encrypt(ord(c), e, n) for c in mensaje]
+descifrado = ''.join(chr(decrypt(c, d, n)) for c in cifrado)
+
+print(f"Original:  {mensaje}")
+print(f"Cifrado:   {cifrado}")
+print(f"Descifrado:{descifrado}")`,
+
+        c5: `import os
+from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
+
+# ── CIFRADO HÍBRIDO (RSA + AES) ────────────────────────────
+# Patrón real: RSA solo cifra la clave de sesión (32 bytes)
+# AES cifra los datos reales (sin límite de tamaño)
+
+# 1. Generar clave AES-256 de sesión aleatoria
+clave_aes = os.urandom(32)
+
+# 2. Cifrar datos con AES-GCM (autenticado, rápido)
+cipher_aes = AES.new(clave_aes, AES.MODE_GCM)
+datos      = b"Datos confidenciales de gran tamaño..."
+datos_cif, tag = cipher_aes.encrypt_and_digest(datos)
+
+# 3. Cifrar la clave AES con RSA-OAEP (lento, solo 32 bytes)
+pub_key    = RSA.import_key(open("recipient_public.pem").read())
+cipher_rsa = PKCS1_OAEP.new(pub_key, hashAlgo=SHA256)
+clave_cif  = cipher_rsa.encrypt(clave_aes)
+
+print("Transmitir: clave_cif + nonce + tag + datos_cif")
+
+# ── DESCIFRADO ─────────────────────────────────────────────
+priv_key    = RSA.import_key(open("private.pem").read())
+cipher_rsa2 = PKCS1_OAEP.new(priv_key, hashAlgo=SHA256)
+clave_rec   = cipher_rsa2.decrypt(clave_cif)        # Recuperar clave AES
+
+cipher_aes2 = AES.new(clave_rec, AES.MODE_GCM, nonce=cipher_aes.nonce)
+datos_rec   = cipher_aes2.decrypt_and_verify(datos_cif, tag)
+print("Descifrado:", datos_rec.decode())`,
+      };
+
+      // ═══════════════════════════════════════════════════════════
+      //  INIT
+      // ═══════════════════════════════════════════════════════════
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Syntax-highlight code blocks
+        ["c1", "c2", "c3", "c4", "c5"].forEach((id) => {
+          document.getElementById(id).innerHTML = hi(CODES[id]);
+        });
+
+        // Initial calculations
+        calcRSA();
+        goStep(0);
+
+        // Live input validation
+        ["inp-p", "inp-q"].forEach((id) => {
+          document.getElementById(id).addEventListener("input", () => {
+            document.getElementById(
+              id === "inp-p" ? "err-p" : "err-q",
+            ).textContent = "";
+            document.getElementById(id).className = "";
+          });
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        if (document.getElementById("tab-lab").classList.contains("active"))
+          drawOAEP();
+      });
+    </script>
+  </body>
+</html>
