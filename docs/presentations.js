@@ -88,7 +88,14 @@ export const presentations = [
     title: "RSA",
     description: "Algoritmo RSA",
     path: "temas/asimetricos/RSA/index.html",
-    image: "temas/asimetricos/assets/rsa1.png",
+    image: "temas/asimetricos/assets/rsa2.png",
+    active: true,
+  },
+  {
+    title: "Ejemplo RSA",
+    description: "Ejemplo de cifrado y descifrado con RSA",
+    path: "temas/asimetricos/RSA/ejemplo_html/index.html",
+    image: "temas/asimetricos/assets/rsa6.png",
     active: true,
   },
   {
