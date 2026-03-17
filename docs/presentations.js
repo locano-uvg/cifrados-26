@@ -62,27 +62,12 @@ export const presentations = [
     image: "temas/simetricos/assets/aes_modos.png",
     active: true,
   },
-
   {
     title: "Cifrados Asimétricos",
     description: "Introducción a los cifrados asimétricos",
     path: "temas/asimetricos/index.html",
     image: "temas/asimetricos/assets/asimetricos.png",
     active: true,
-  },
-  {
-    title: "Hashes",
-    description: "Funciones hash",
-    path: "temas/asimetricos/Hashes/index.html",
-    image: "temas/asimetricos/assets/hash.png",
-    active: false,
-  },
-  {
-    title: "Firmas Digitales",
-    description: "Firmas digitales",
-    path: "temas/asimetricos/Firmas/index.html",
-    image: "temas/asimetricos/assets/firma1.jpg",
-    active: false,
   },
   {
     title: "RSA",
@@ -97,6 +82,27 @@ export const presentations = [
     path: "temas/asimetricos/RSA/ejemplo_html/index.html",
     image: "temas/asimetricos/assets/rsa6.png",
     active: true,
+  },
+  {
+    title: "Hashes",
+    description: "Funciones hash",
+    path: "temas/asimetricos/Hashes/index.html",
+    image: "temas/asimetricos/assets/hash.png",
+    active: true,
+  },
+  {
+    title: "Ejemplo Hashes",
+    description: "Ejemplo de funciones hash",
+    path: "temas/asimetricos/Hashes/ejemplo_html/index.html",
+    image: "temas/asimetricos/assets/hash2.png",
+    active: true,
+  },
+  {
+    title: "Firmas Digitales",
+    description: "Firmas digitales",
+    path: "temas/asimetricos/Firmas/index.html",
+    image: "temas/asimetricos/assets/firma1.jpg",
+    active: false,
   },
   {
     title: "ECC",

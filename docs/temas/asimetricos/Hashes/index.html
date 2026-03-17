@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Funciones Hash</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- 1. PORTADA -->
+        <section>
+          <h1>Funciones Hash</h1>
+        </section>
+
+        <!-- 2. PUNTO DE PARTIDA -->
+        <section>
+          <section>
+            <h2>¿Qué problema resuelve?</h2>
+          </section>
+          <section>
+            <p>
+              <strong>RSA</strong>: ciframos con clave pública, desciframos con
+              clave privada. RSA resuelve <strong>confidencialidad</strong>.
+            </p>
+            <br />
+            <p>Pero hay otro problema que RSA no resuelve directamente:</p>
+            <blockquote style="font-size: 1.3rem">
+              ¿Cómo sé que el mensaje <strong>no fue modificado</strong> en el
+              camino?
+            </blockquote>
+          </section>
+          <section>
+            <h3>El problema concreto</h3>
+            <p>Descargar Office de <strong>4 GB</strong> desde internet.</p>
+            <br />
+            <ul>
+              <li>
+                ¿Como validamos que el archivo que descargamos es exactamente el
+                que el autor publicó?
+              </li>
+              <li>
+                ¿Que pasa si alguien lo modificó con malware en el camino?
+              </li>
+            </ul>
+            <br />
+            <p>
+              Cifrar 4 GB con RSA sería <strong>imprácticamente lento</strong>.
+              ¿Como validar la integridad sin cifrar el archivo completo?
+            </p>
+          </section>
+        </section>
+
+        <!-- 3. QUÉ ES -->
+        <section>
+          <section>
+            <h2>¿Qué es una Función Hash?</h2>
+          </section>
+          <section>
+            <h3>La Caja Negra criptográfica</h3>
+            <p>
+              Una función hash toma
+              <strong>cualquier cantidad de datos</strong> — un archivo de 1
+              byte o de 100 GB — y produce siempre una
+              <strong>huella digital de tamaño fijo</strong>.
+            </p>
+          </section>
+          <section>
+            <ul>
+              <li>Podemos hashear cualquier cosa (texto, imagen, video)</li>
+              <li>Siempre sale exactamente el mismo volumen (ej. 256 bits)</li>
+              <li>
+                <strong>No se puede "extraer"</strong>: el resultado no revela
+                nada sobre los datos de entrada
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>La diferencia clave con RSA</h3>
+            <p>
+              En <strong>RSA</strong> el cifrado es <em>reversible</em> con la
+              clave correcta.
+            </p>
+            <p>
+              En una <strong>función hash</strong> la transformación es
+              <em>unidireccional por diseño</em> — nunca se puede revertir.
+            </p>
+          </section>
+          <section>
+            <img
+              src="../assets/hash.png"
+              alt="Función Hash"
+              style="background-color: white"
+            />
+          </section>
+          <section>
+            <pre><code class="python">import hashlib
+
+# El mismo input SIEMPRE produce el mismo hash
+print(hashlib.sha256(b"hola").hexdigest())
+# a5cf06e0dd55e88f4f1b9b55ac5db8e28bf62a3e671048e92e1c9a24b0428027
+
+# Un solo bit diferente => hash completamente distinto (efecto avalancha)
+print(hashlib.sha256(b"Hola").hexdigest())
+# 1e3f...  completamente diferente</code></pre>
+          </section>
+        </section>
+
+        <!-- 4. PROPIEDADES -->
+        <section>
+          <section>
+            <h2>Propiedades</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <b>Unidireccionalidad (Pre-image resistance)</b>: <br />
+                Dado h, es computacionalmente inviable encontrar m tal que H(m)
+                = h.
+                <em>Protege contraseñas almacenadas.</em>
+              </li>
+              <li>
+                <b>Determinismo</b>: <br />
+                La misma entrada siempre produce el mismo hash.
+                <em>Sin esto, no se podría verificar nada.</em>
+              </li>
+              <li>
+                <b>Efecto Avalancha</b>: <br />
+                Cambiar 1 bit de la entrada cambia ~50% de los bits del hash.
+                <em
+                  >"hola" y "Hola" producen hashes completamente distintos.</em
+                >
+              </li>
+            </ul>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <b>Resistencia a colisiones (Collision resistance)</b>: <br />
+                Computacionalmente inviable encontrar m₁ ≠ m₂ con H(m₁) = H(m₂).
+                <em>Evita falsificación de documentos.</em>
+              </li>
+              <li>
+                <b>Resistencia a la segunda pre-imagen (2nd pre-image)</b>:
+                <br />
+                Dado m₁, inviable encontrar m₂ ≠ m₁ con H(m₁) = H(m₂).
+                <em>Evita sustitución de un documento por otro.</em>
+              </li>
+              <li>
+                <b>Rapidez</b>: <br />
+                Cálculo eficiente para cualquier tamaño de entrada.
+                <!-- <strong>excepto en hashes de contraseñas</strong>
+                donde se busca exactamente lo contrario (lentitud deliberada). -->
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 5. ALGORITMOS HASH MODERNOS -->
+        <section>
+          <section>
+            <h2>Algoritmos Hash Modernos</h2>
+          </section>
+          <section>
+            <h3>MD5 — No usar para seguridad</h3>
+            <ul>
+              <li>Desarrollado en 1991 por Ron Rivest (la R de RSA).</li>
+              <li>Produce un valor de hash de 128 bits (32 hex)</li>
+              <li>
+                <strong>Colisiones prácticas desde 2004.</strong>
+                Flame malware (2012) usó colisión MD5 para falsificar cert de
+                Microsoft.
+              </li>
+              <li>
+                Solo aceptable para checksum rápido sin implicaciones de
+                seguridad.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>SHA-1 — Obsoleto</h3>
+            <ul>
+              <li>Desarrollado en 1995 por NSA/NIST.</li>
+              <li>Produce 160 bits (40 hex)</li>
+              <li>
+                <strong>SHAttered (Google, 2017):</strong> primera colisión
+                práctica. Dos PDFs distintos con el mismo SHA-1.
+              </li>
+              <li>
+                <strong>No usar en nuevos sistemas.</strong> Removido de TLS
+                1.3. Navegadores rechazan certificados con SHA-1.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>SHA-256 (SHA-2) — El estándar actual</h3>
+            <ul>
+              <li>Desarrollado en 2001 por NSA/NIST.</li>
+              <li>Produce 256 bits (64 hex)</li>
+              <li>Sin colisiones conocidas. Ampliamente analizado.</li>
+              <li>
+                Usado en: Bitcoin, TLS, SSH, PGP moderno, certificados HTTPS.
+              </li>
+              <li>
+                <strong>Usar por defecto para integridad y firmas.</strong>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>SHA-3 (Keccak) — El plan B</h3>
+            <ul>
+              <li>
+                Estandarizado en 2015. Diseño interno radicalmente distinto a
+                SHA-2.
+              </li>
+              <li>Produce 224, 256, 384 o 512 bits.</li>
+              <li>
+                Diferente familia que SHA-2.
+                <strong
+                  >Si se descubre una vulnerabilidad en SHA-2, SHA-3 no se ve
+                  afectado.</strong
+                >
+              </li>
+              <li>
+                Usado en Ethereum (keccak256), aplicaciones críticas de
+                seguridad.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>BLAKE3 — El más rápido</h3>
+            <ul>
+              <li>
+                Desarrollado en 2020. Produce 256 bits por defecto
+                (configurable).
+              </li>
+              <li>
+                <strong>5-10x más rápido que SHA-256</strong> en hardware
+                moderno. Paralelizable — aprovecha múltiples núcleos.
+              </li>
+              <li>
+                Usado en sistemas de archivos (Btrfs), herramientas de build.
+              </li>
+              <li>
+                Aún en proceso de adopción para estándares de seguridad
+                críticos.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>El caso especial: hashes de contraseñas</h3>
+            <p>
+              <strong>Trampa conceptual:</strong> si SHA-256 es seguro, ¿por qué
+              no usarlo para contraseñas? El problema es que es
+              <strong>demasiado rápido</strong>.
+            </p>
+            <p style="font-size: 1.1rem">
+              Una RTX 4090 calcula
+              <strong>22 mil millones de SHA-256/segundo</strong>. Una
+              contraseña de 8 chars se crackea en segundos.
+            </p>
+            <table style="font-size: 1.1rem">
+              <tr>
+                <th>Algoritmo</th>
+                <th>Año</th>
+                <th>Memoria adaptativa</th>
+                <th>Estado</th>
+              </tr>
+              <tr>
+                <td>bcrypt</td>
+                <td>1999</td>
+                <td>No</td>
+                <td>Aceptable</td>
+              </tr>
+              <tr>
+                <td>scrypt</td>
+                <td>2009</td>
+                <td>Sí</td>
+                <td>Bueno</td>
+              </tr>
+              <tr>
+                <td><strong>Argon2id</strong></td>
+                <td>2015</td>
+                <td>Sí</td>
+                <td>Recomendado (OWASP)</td>
+              </tr>
+              <tr>
+                <td>PBKDF2</td>
+                <td>2000</td>
+                <td>No</td>
+                <td>Solo si no hay alternativa</td>
+              </tr>
+            </table>
+          </section>
+        </section>
+
+        <!-- 6. ATAQUES -->
+        <section>
+          <section>
+            <h2>Ataques a Funciones Hash</h2>
+          </section>
+          <section>
+            <h3>Rainbow Tables</h3>
+            <ul>
+              <li>
+                Tablas precalculadas que mapean hashes a sus textos planos
+                originales.
+              </li>
+              <li>
+                Si el sitio usó SHA-256 directamente sobre la contraseña, el
+                atacante consulta la tabla y encuentra la original
+                <strong>casi instantáneamente</strong>.
+              </li>
+              <li>
+                HaveIBeenPwned tiene miles de millones de pares (hash,
+                contraseña) de filtraciones reales.
+              </li>
+              <li>
+                <strong>Mitigación: Salt.</strong> Un valor aleatorio único por
+                usuario invalida cualquier tabla precalculada.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Salt — La defensa contra Rainbow Tables</h3>
+            <pre><code class="python">import hashlib, os
+
+# Sin salt — vulnerable a rainbow tables
+hash_sin_salt = hashlib.sha256(b"mi_password").hexdigest()
+# 5e884898da280471...  (en cualquier rainbow table)
+
+# Con salt — invulnerable a tablas precalculadas
+salt = os.urandom(32)  # 32 bytes aleatorios únicos por usuario
+hash_con_salt = hashlib.sha256(salt + b"mi_password").hexdigest()
+# Almacenar: salt + hash_con_salt
+
+# El salt no es secreto, se almacena junto al hash
+# Su propósito es hacer cada hash único, no secreto</code></pre>
+            <p>
+              <strong
+                >Usar Argon2id en lugar de SHA+salt para contraseñas:</strong
+              >
+              maneja el salt automáticamente y añade resistencia a GPU/ASIC.
+            </p>
+          </section>
+          <section>
+            <h3>Length Extension Attack</h3>
+            <ul>
+              <li>
+                SHA-1, SHA-256 y SHA-512 (familia Merkle-Damgård) son
+                vulnerables a un ataque de extensión de longitud.
+              </li>
+              <li>
+                Si conoces H(mensaje) pero no el mensaje, puedes calcular
+                H(mensaje || padding || extension)
+                <strong>sin conocer el mensaje original</strong>.
+              </li>
+              <li>
+                <strong>Ejemplo:</strong> Una API que protege parámetros con MAC
+                = SHA256(secret || params) es vulnerable si el atacante puede
+                añadir parámetros extras.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Demostración del ataque</h3>
+            <pre><code class="python"># VULNERABLE: MAC construido concatenando secreto
+def mac_vulnerable(secreto, mensaje):
+    return hashlib.sha256(secreto + mensaje).hexdigest()
+
+# Un atacante que conoce mac_vulnerable(secreto, "amount=100")
+# puede calcular mac_vulnerable(secreto, "amount=100&admin=true")
+# sin conocer el secreto — usando herramientas de length extension
+
+# SEGURO: HMAC está diseñado para evitar este ataque
+import hmac
+def mac_seguro(secreto, mensaje):
+    return hmac.new(secreto, mensaje, hashlib.sha256).hexdigest()
+# HMAC usa dos pasadas de hash que eliminan la vulnerabilidad</code></pre>
+            <p>
+              <strong>Regla:</strong> Para MACs, siempre HMAC, nunca H(secreto
+              || mensaje).
+            </p>
+          </section>
+          <section>
+            <h3>Fuerza Bruta con GPU</h3>
+            <ul>
+              <li>RTX 4090: ~22 billion SHA-256/segundo</li>
+              <li>
+                Contraseña de 8 chars (minúsculas + números): ~3 billones de
+                combinaciones → <strong>crackeada en segundos</strong> con
+                SHA-256
+              </li>
+              <li>
+                Argon2id con configuración mínima OWASP (~64MB RAM, 3
+                iteraciones): menos de 100 hashes/segundo en GPU —
+                <strong>hace el ataque económicamente inviable</strong>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 7. HMAC -->
+        <section>
+          <section>
+            <h2>HMAC — Hash-Based Message Authentication Code</h2>
+          </section>
+          <section>
+            <p>
+              SHA-256 verifica <strong>integridad</strong> (¿fue modificado?),
+              pero no <strong>autenticidad</strong> (¿quién lo generó?). Para
+              esto existe HMAC.
+            </p>
+            <br />
+            <ul>
+              <li><strong>Integridad:</strong> el mensaje no fue alterado</li>
+              <li>
+                <strong>Autenticidad:</strong> quien generó el MAC conoce la
+                clave secreta
+              </li>
+            </ul>
+            <br />
+            <p>HMAC(K, m) = H((K' ⊕ opad) || H((K' ⊕ ipad) || m))</p>
+          </section>
+          <section>
+            <pre><code class="python">import hmac
+import hashlib
+
+secreto = b"clave_secreta_compartida"
+mensaje = b"amount=100&recipient=alice"
+
+# Generar MAC
+mac = hmac.new(secreto, mensaje, hashlib.sha256).hexdigest()
+print("HMAC-SHA256:", mac)
+
+# Verificar MAC (comparación de tiempo constante — evita timing attack)
+mac_recibido = "..."  # MAC del mensaje recibido
+if hmac.compare_digest(mac, mac_recibido):
+    print("Mensaje auténtico e íntegro")
+else:
+    print("Mensaje alterado o MAC inválido")
+
+# IMPORTANTE: hmac.compare_digest previene timing attacks
+# No usar mac == mac_recibido (revela info por tiempo de ejecución)</code></pre>
+          </section>
+        </section>
+
+        <!-- 8. APLICACIONES -->
+        <section>
+          <section>
+            <h2>Aplicaciones</h2>
+            <p style="font-size: 1.2rem; opacity: 0.8">
+              Los hashes están en casi todo lo que usan a diario.
+            </p>
+          </section>
+
+          <section>
+            <h3>Integridad de Archivos y Datos</h3>
+            <p>
+              Verifican que el archivo recibido es completo, no fue alterado y
+              no está corrompido.
+            </p>
+            <pre><code class="bash"># Verificar descarga de ISO de Ubuntu
+sha256sum ubuntu-24.04.iso
+# Comparar con el hash publicado en el sitio oficial</code></pre>
+            <p>
+              Usado para: archivos .zip, .tar, ISOs, firmware, paquetes (npm,
+              pip, apt)
+            </p>
+          </section>
+
+          <section>
+            <h3>Protección de Contraseñas</h3>
+            <ul>
+              <li>
+                Ningún sistema serio almacena contraseñas en texto plano.
+                Almacena el hash + salt (Argon2id).
+              </li>
+              <li>
+                Verificación: se hashea la contraseña ingresada y se compara el
+                resultado.
+                <strong>La contraseña original nunca se almacena.</strong>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Firmas Digitales — La conexión con RSA</h3>
+            <p>
+              No se firma el documento completo con RSA — eso sería lento para
+              archivos grandes. Se firma el <strong>hash del documento</strong>.
+            </p>
+          </section>
+          <section>
+            <img
+              src="../assets/hash2.png"
+              alt="Hash en validaciones"
+              height="480"
+            />
+            <p style="font-size: 1rem; opacity: 0.8">
+              TLS 1.3 solo acepta SHA-256 y SHA-384 — SHA-1 completamente
+              eliminado.
+            </p>
+          </section>
+
+          <section>
+            <h3>Blockchain</h3>
+            <p>
+              Bitcoin usa SHA-256 para encadenar bloques y el mecanismo de Proof
+              of Work. Cambiar una transacción cambia el hash del bloque, que
+              cambia el del siguiente —
+              <strong>invalidando toda la cadena</strong>.
+            </p>
+            <p>Ethereum usa Keccak-256 (SHA-3 no estándar).</p>
+          </section>
+
+          <section>
+            <h3>Git — Lo usan todos los días</h3>
+            <p>
+              Cada commit, árbol y blob en Git tiene un identificador SHA-1 (en
+              proceso de migración a SHA-256). El <code>git log</code> que usan
+              a diario está basado en hashes.
+            </p>
+          </section>
+
+          <section>
+            <h3>Detección de Malware</h3>
+            <ul>
+              <li>
+                Los antivirus identifican amenazas por el
+                <strong>hash del archivo</strong>, no por su nombre.
+              </li>
+              <li>Listas públicas de hashes de malware: VirusTotal, NSRL.</li>
+              <li>
+                PhotoDNA de Microsoft usa hashes perceptuales para detectar
+                contenido ilegal en imágenes, incluso con modificaciones
+                menores.
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>Merkle Trees</h3>
+            <ul>
+              <li>
+                Árbol binario donde cada nodo contiene el hash de sus hijos.
+              </li>
+              <li>
+                La raíz (Merkle root) representa de forma compacta e íntegra
+                todo el árbol.
+              </li>
+              <li>
+                Verifica que un elemento pertenece al árbol sin descargarlo
+                completo — O(log n) verificación.
+              </li>
+              <li>
+                Usado en: Bitcoin (transacciones en bloques), Git, IPFS, ZFS.
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 9. IMPLEMENTACIÓN -->
+        <section>
+          <section>
+            <h2>Implementación</h2>
+          </section>
+          <section>
+            <h3>SHA-256 en Python</h3>
+            <pre><code class="python">import hashlib
+
+mensaje = "Hola, mundo"
+hash_sha256 = hashlib.sha256(mensaje.encode()).hexdigest()
+print("SHA-256:", hash_sha256)
+
+# Para archivos grandes: usar update() para no cargar todo en memoria
+sha256 = hashlib.sha256()
+with open("archivo_grande.bin", "rb") as f:
+    for chunk in iter(lambda: f.read(65536), b""):
+        sha256.update(chunk)
+print("SHA-256 del archivo:", sha256.hexdigest())</code></pre>
+          </section>
+          <section>
+            <h3>Contraseñas con Argon2id (Recomendado)</h3>
+            <pre><code class="python">from argon2 import PasswordHasher, exceptions
+
+ph = PasswordHasher()
+# Configuración OWASP mínima por defecto: m=65536, t=3, p=4
+
+# Registrar contraseña
+hash_almacenado = ph.hash("mi_super_contraseña")
+print("Hash Argon2id:", hash_almacenado)
+
+# Verificar contraseña
+try:
+    ph.verify(hash_almacenado, "mi_super_contraseña")
+    if ph.check_needs_rehash(hash_almacenado):
+        nuevo_hash = ph.hash("mi_super_contraseña")
+        # Almacenar nuevo_hash en la BD
+    print("Acceso concedido")
+except exceptions.VerifyMismatchError:
+    print("Contraseña incorrecta")
+except exceptions.VerificationError:
+    print("Error en verificación")</code></pre>
+          </section>
+          <section>
+            <h3>HMAC para APIs (Tiempo Constante)</h3>
+            <pre><code class="python">import hmac
+import hashlib
+import secrets
+
+api_secret = secrets.token_bytes(32)
+
+def firmar_request(secreto, payload: bytes) -> str:
+    return hmac.new(secreto, payload, hashlib.sha256).hexdigest()
+
+def verificar_request(secreto, payload: bytes, firma_recibida: str) -> bool:
+    firma_esperada = firmar_request(secreto, payload)
+    # compare_digest: tiempo constante — previene timing attack
+    return hmac.compare_digest(firma_esperada, firma_recibida)
+
+payload = b"POST /transfer amount=100 to=bob"
+firma = firmar_request(api_secret, payload)
+assert verificar_request(api_secret, payload, firma)</code></pre>
+          </section>
+        </section>
+
+        <!-- 10. CIERRE -->
+        <section>
+          <section>
+            <h2>La conexión con lo que viene</h2>
+          </section>
+          <section>
+            <p>Los hashes ayudan a unir los algoritmos criptográficos.</p>
+            <br />
+            <ul>
+              <li>
+                <strong>Firmas digitales:</strong> RSA firma el
+                <em>hash</em> del documento.
+              </li>
+              <li>
+                <strong>Certificados TLS:</strong> SHA-256 aparece en todas
+                partes.
+              </li>
+              <li>
+                <strong>Blockchain:</strong> SHA-256 es el núcleo de Proof of
+                Work.
+              </li>
+              <li>
+                <strong>Git:</strong> cada objeto es identificado por su hash.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>Reglas para recordar siempre</h2>
+            <table>
+              <tr>
+                <th>Caso de uso</th>
+                <th>Algoritmo</th>
+              </tr>
+              <tr>
+                <td>Integridad de datos / firmas</td>
+                <td><strong>SHA-256</strong> o SHA-3</td>
+              </tr>
+              <tr>
+                <td>Contraseñas</td>
+                <td><strong>Argon2id</strong></td>
+              </tr>
+              <tr>
+                <td>Autenticar mensajes / APIs</td>
+                <td><strong>HMAC-SHA256</strong></td>
+              </tr>
+              <tr>
+                <td>MD5 / SHA-1</td>
+                <td>Solo legacy o checksum no-crítico</td>
+              </tr>
+            </table>
+          </section>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>

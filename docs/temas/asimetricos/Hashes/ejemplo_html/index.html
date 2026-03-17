@@ -1,0 +1,3390 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Funciones Hash Criptográficas</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --bg-card: #1c2230;
+        --bg-code: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --blue: #58a6ff;
+        --indigo: #79c0ff;
+        --purple: #bc8cff;
+        --green: #3fb950;
+        --red: #f85149;
+        --yellow: #d29922;
+        --font:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+        --mono: "Fira Code", "Cascadia Code", "Consolas", monospace;
+        --bg2: var(--bg-card);
+        --bg3: var(--bg-code);
+        --text-dim: var(--muted);
+        --text-faint: #6e7681;
+        --blue-bright: var(--indigo);
+        --purple-bright: var(--purple);
+        --cyan: var(--indigo);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        font-size: 16px;
+        overflow-x: hidden;
+      }
+
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      /* ── Header ── */
+      header {
+        background: radial-gradient(
+          ellipse 80% 60% at 50% -10%,
+          rgba(88, 166, 255, 0.12) 0%,
+          transparent 60%
+        );
+        border-bottom: 1px solid var(--border);
+        padding: 4rem 2rem 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      header::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse at 25% 60%,
+            rgba(88, 166, 255, 0.1) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse at 75% 40%,
+            rgba(188, 140, 255, 0.08) 0%,
+            transparent 55%
+          );
+        pointer-events: none;
+      }
+      .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(88, 166, 255, 0.15);
+        border: 1px solid rgba(88, 166, 255, 0.35);
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--blue);
+        margin-bottom: 1rem;
+        letter-spacing: 0.5px;
+      }
+      h1 {
+        font-size: clamp(3rem, 8vw, 6rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, var(--text) 30%, var(--blue) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.6rem;
+      }
+      .header-sub {
+        color: var(--text-dim);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto 1.8rem;
+      }
+      .header-stats {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        flex-wrap: wrap;
+      }
+      .stat-item {
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--blue-bright);
+      }
+      .stat-label {
+        font-size: 12px;
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* ── Nav ── */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(13, 17, 23, 0.92);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        justify-content: center;
+      }
+      nav a {
+        color: var(--text-dim);
+        text-decoration: none;
+        padding: 14px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        transition:
+          color 0.2s,
+          border-color 0.2s;
+      }
+      nav a:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      nav a.active {
+        color: var(--blue);
+        border-color: var(--blue);
+      }
+
+      /* ── Container ── */
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ── Section ── */
+      section {
+        padding: 80px 24px;
+        opacity: 0;
+        transform: translateY(30px);
+        transition:
+          opacity 0.6s ease,
+          transform 0.6s ease;
+      }
+      section.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .section-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .section-icon.blue {
+        background: rgba(59, 130, 246, 0.15);
+      }
+      .section-icon.purple {
+        background: rgba(168, 85, 247, 0.15);
+      }
+      .section-icon.green {
+        background: rgba(34, 197, 94, 0.15);
+      }
+      .section-icon.yellow {
+        background: rgba(245, 158, 11, 0.15);
+      }
+      .section-icon.cyan {
+        background: rgba(6, 182, 212, 0.15);
+      }
+      .section-icon.red {
+        background: rgba(239, 68, 68, 0.15);
+      }
+
+      h2 {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        font-weight: 700;
+        color: var(--text);
+      }
+      .section-desc {
+        color: var(--text-dim);
+        margin-bottom: 40px;
+        font-size: 1rem;
+      }
+
+      /* ── Cards ── */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .card:hover {
+        border-color: rgba(59, 130, 246, 0.4);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
+      }
+      .card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--blue);
+      }
+      .card p {
+        font-size: 14px;
+        color: var(--text-dim);
+      }
+
+      .grid {
+        display: grid;
+        gap: 20px;
+      }
+      .grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+      .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      /* ── Tabs ── */
+      .tabs-wrapper {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .tabs-nav {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg3);
+        overflow-x: auto;
+      }
+      .tab-btn {
+        padding: 14px 24px;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+      }
+      .tab-btn.active {
+        color: var(--blue-bright);
+        border-color: var(--blue);
+      }
+      .tab-panel {
+        display: none;
+        padding: 28px;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ── Code blocks ── */
+      pre {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.7;
+        position: relative;
+      }
+      code {
+        font-family: "Fira Code", "Cascadia Code", monospace;
+      }
+      .code-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-faint);
+        margin-bottom: 8px;
+      }
+      .kw {
+        color: #c084fc;
+      }
+      .fn {
+        color: #60a5fa;
+      }
+      .st {
+        color: #34d399;
+      }
+      .cm {
+        color: #475569;
+        font-style: italic;
+      }
+      .nb {
+        color: #fb923c;
+      }
+      .cp {
+        color: #f472b6;
+      }
+
+      /* ── Badge ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .badge-green {
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      .badge-red {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+      .badge-yellow {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+      .badge-blue {
+        background: rgba(59, 130, 246, 0.12);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+      .badge-purple {
+        background: rgba(168, 85, 247, 0.12);
+        color: #c084fc;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+      }
+      .badge-cyan {
+        background: rgba(6, 182, 212, 0.12);
+        color: #67e8f9;
+        border: 1px solid rgba(6, 182, 212, 0.2);
+      }
+
+      /* ── Input ── */
+      input[type="text"],
+      textarea {
+        width: 100%;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: var(--blue);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+      }
+
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      .btn-purple {
+        background: var(--purple);
+        color: white;
+      }
+      .btn-purple:hover {
+        background: #9333ea;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-outline:hover {
+        border-color: var(--blue);
+        color: var(--blue-bright);
+      }
+      .btn-sm {
+        padding: 7px 14px;
+        font-size: 13px;
+      }
+
+      /* ── Hash Output ── */
+      .hash-output {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-family: monospace;
+        font-size: 13px;
+        word-break: break-all;
+        color: var(--cyan);
+        min-height: 46px;
+        transition: all 0.3s;
+      }
+
+      /* ── Properties grid ── */
+      .prop-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+      }
+      .prop-card:hover {
+        transform: translateX(4px);
+      }
+      .prop-card.blue {
+        border-left-color: var(--blue);
+      }
+      .prop-card.purple {
+        border-left-color: var(--purple);
+      }
+      .prop-card.green {
+        border-left-color: var(--green);
+      }
+      .prop-card.yellow {
+        border-left-color: var(--yellow);
+      }
+      .prop-card.cyan {
+        border-left-color: var(--cyan);
+      }
+      .prop-title {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 6px;
+      }
+      .prop-tag {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-bottom: 8px;
+      }
+      .prop-desc {
+        font-size: 13px;
+        color: var(--text-dim);
+      }
+
+      /* ── Algorithm table ── */
+      .algo-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .algo-table th,
+      .algo-table td {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+      }
+      .algo-table th {
+        background: var(--bg3);
+        font-weight: 600;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1px;
+      }
+      .algo-table tr:last-child td {
+        border-bottom: none;
+      }
+      .algo-table tr {
+        transition: background 0.15s;
+      }
+      .algo-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .overflow-x {
+        overflow-x: auto;
+      }
+
+      /* ── SVG diagram ── */
+      #sig-diagram {
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        display: block;
+      }
+
+      /* ── Canvas ── */
+      #avalanche-canvas {
+        width: 100%;
+        height: 200px;
+        border-radius: 10px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+      }
+
+      /* ── Bit diff display ── */
+      .bits-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-top: 12px;
+      }
+      .bit-cell {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        transition: background 0.3s;
+      }
+      .bit-same {
+        background: rgba(59, 130, 246, 0.25);
+      }
+      .bit-diff {
+        background: var(--red);
+      }
+
+      /* ── Salt demo ── */
+      .salt-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .salt-row:last-child {
+        border-bottom: none;
+      }
+      .salt-val {
+        color: var(--yellow);
+        font-family: monospace;
+        flex: 1;
+        word-break: break-all;
+      }
+      .salt-hash {
+        color: var(--cyan);
+        font-family: monospace;
+        flex: 2;
+        word-break: break-all;
+      }
+
+      /* ── Speed bars ── */
+      .speed-bar-wrap {
+        margin-bottom: 20px;
+      }
+      .speed-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      .speed-bar-bg {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        height: 28px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .speed-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding-left: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0;
+      }
+
+      /* ── Attack cards ── */
+      .attack-card {
+        background: var(--bg2);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        border-top: 3px solid var(--red);
+      }
+      .attack-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #f87171;
+        margin-bottom: 8px;
+      }
+      .mitigation {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #4ade80;
+        margin-top: 12px;
+      }
+      .mitigation strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* ── HMAC formula ── */
+      .formula-box {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px 24px;
+        font-family: monospace;
+        font-size: 14px;
+        color: var(--purple-bright);
+        text-align: center;
+        margin: 20px 0;
+        letter-spacing: 0.5px;
+      }
+
+      /* ── Best practices ── */
+      .bp-item {
+        display: flex;
+        gap: 14px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+        align-items: flex-start;
+      }
+      .bp-item:last-child {
+        border-bottom: none;
+      }
+      .bp-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .bp-icon.warn {
+        background: rgba(245, 158, 11, 0.12);
+      }
+      .bp-icon.ok {
+        background: rgba(34, 197, 94, 0.12);
+      }
+      .bp-content h4 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .bp-content p {
+        font-size: 13px;
+        color: var(--text-dim);
+      }
+
+      /* ── Apps grid ── */
+      .app-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        transition: all 0.2s;
+      }
+      .app-card:hover {
+        border-color: rgba(168, 85, 247, 0.3);
+      }
+      .app-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .app-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .app-desc {
+        font-size: 13px;
+        color: var(--text-dim);
+      }
+
+      /* ── Hash compare ── */
+      .compare-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 600px) {
+        .compare-section {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Diff stats ── */
+      .diff-stat {
+        text-align: center;
+        padding: 16px;
+        background: var(--bg3);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      .diff-stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--red), var(--purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .diff-stat-label {
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+
+      /* ── Footer ── */
+      footer {
+        background: var(--bg3);
+        border-top: 1px solid var(--border);
+        padding: 40px 24px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 13px;
+      }
+
+      /* ── HMAC interactive ── */
+      .hmac-output {
+        font-family: monospace;
+        font-size: 12px;
+        word-break: break-all;
+        color: var(--purple-bright);
+        padding: 12px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        min-height: 40px;
+      }
+
+      /* ── Animated gradient border ── */
+      .glow-border {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .glow-border::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        background: linear-gradient(
+          135deg,
+          var(--blue),
+          var(--purple),
+          var(--blue)
+        );
+        background-size: 200% 200%;
+        animation: gradBorder 4s linear infinite;
+        z-index: -1;
+        border-radius: 17px;
+      }
+      @keyframes gradBorder {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* ── Tooltip ── */
+      [data-tip] {
+        position: relative;
+        cursor: help;
+      }
+      [data-tip]::after {
+        content: attr(data-tip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e293b;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 50;
+        color: var(--text);
+        max-width: 240px;
+        white-space: pre-wrap;
+        text-align: center;
+      }
+      [data-tip]:hover::after {
+        opacity: 1;
+      }
+
+      /* ── Divider ── */
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 32px 0;
+      }
+
+      /* ── Copy button ── */
+      .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-faint);
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .copy-btn:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* ── Pulse dot ── */
+      .pulse-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+      }
+
+      /* ── Info box ── */
+      .info-box {
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 13px;
+        color: #93c5fd;
+      }
+      .warn-box {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 13px;
+        color: #fbbf24;
+      }
+
+      /* ── SVG diagram styling ── */
+      .diag-box {
+        rx: 8;
+      }
+      .diag-arrow {
+        marker-end: url(#arrow);
+      }
+
+      /* ── Number highlight ── */
+      .num {
+        color: #fb923c;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══════════════════ HEADER ══════════════════ -->
+    <header>
+      <div class="header-badge">Criptografía Moderna</div>
+      <h1>Funciones Hash Criptográficas</h1>
+      <p class="header-sub">
+        Huellas digitales únicas, unidireccionales e irreversibles para la
+        seguridad de datos
+      </p>
+      <div class="header-stats">
+        <div class="stat-item">
+          <div class="stat-value">256</div>
+          <div class="stat-label">bits SHA-256</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">2⁸⁰</div>
+          <div class="stat-label">operaciones p/ colisión</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">~50%</div>
+          <div class="stat-label">bits cambian (avalancha)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">22B/s</div>
+          <div class="stat-label">SHA-256 en RTX 4090</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════════════════ NAV ══════════════════ -->
+    <nav id="main-nav">
+      <a href="#intro" class="active">Introducción</a>
+      <a href="#propiedades">Propiedades</a>
+      <a href="#algoritmos">Algoritmos</a>
+      <a href="#lab">Laboratorio</a>
+      <a href="#ataques">Ataques</a>
+      <a href="#hmac">HMAC</a>
+      <a href="#buenas-practicas">Buenas Prácticas</a>
+      <a href="#aplicaciones">Aplicaciones</a>
+      <a href="#codigo">Código</a>
+    </nav>
+
+    <!-- ══════════════════ INTRO ══════════════════ -->
+    <section id="intro">
+      <div class="container">
+        <div class="section-header">
+
+          <div>
+            <h2>¿Qué es una Función Hash?</h2>
+          </div>
+        </div>
+        <p class="section-desc">
+          Una función hash criptográfica transforma cualquier entrada de tamaño
+          arbitrario en una "huella digital" de tamaño fijo, de forma
+          determinista e irreversible.
+        </p>
+
+        <div class="glow-border" style="margin-bottom: 40px">
+          <div
+            style="background: var(--bg2); border-radius: 16px; padding: 32px"
+          >
+            <svg
+              viewBox="0 0 700 120"
+              xmlns="http://www.w3.org/2000/svg"
+              style="
+                width: 100%;
+                max-width: 700px;
+                display: block;
+                margin: 0 auto;
+              "
+            >
+              <defs>
+                <marker
+                  id="arr"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="6"
+                  refY="3"
+                  orient="auto"
+                >
+                  <path d="M0,0 L0,6 L8,3 z" fill="#60a5fa" />
+                </marker>
+              </defs>
+              <!-- Input box -->
+              <rect
+                x="10"
+                y="35"
+                width="130"
+                height="50"
+                rx="8"
+                fill="rgba(59,130,246,0.12)"
+                stroke="#3b82f6"
+                stroke-width="1.5"
+              />
+              <text
+                x="75"
+                y="57"
+                text-anchor="middle"
+                fill="#93c5fd"
+                font-size="11"
+                font-family="Inter,sans-serif"
+                font-weight="600"
+              >
+                ENTRADA
+              </text>
+              <text
+                x="75"
+                y="74"
+                text-anchor="middle"
+                fill="#60a5fa"
+                font-size="10"
+                font-family="Inter,sans-serif"
+              >
+                cualquier tamaño
+              </text>
+              <!-- Arrow 1 -->
+              <line
+                x1="142"
+                y1="60"
+                x2="190"
+                y2="60"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arr)"
+              />
+              <!-- Hash box -->
+              <rect
+                x="192"
+                y="25"
+                width="150"
+                height="70"
+                rx="8"
+                fill="rgba(168,85,247,0.15)"
+                stroke="#a855f7"
+                stroke-width="1.5"
+              />
+              <text
+                x="267"
+                y="52"
+                text-anchor="middle"
+                fill="#c084fc"
+                font-size="11"
+                font-family="Inter,sans-serif"
+                font-weight="600"
+              >
+                FUNCIÓN HASH
+              </text>
+              <text
+                x="267"
+                y="67"
+                text-anchor="middle"
+                fill="#a855f7"
+                font-size="10"
+                font-family="Inter,sans-serif"
+              >
+                SHA-256 / Blake3 / …
+              </text>
+              <text
+                x="267"
+                y="82"
+                text-anchor="middle"
+                fill="#7c3aed"
+                font-size="9"
+                font-family="Inter,sans-serif"
+              >
+                compresión irreversible
+              </text>
+              <!-- Arrow 2 -->
+              <line
+                x1="344"
+                y1="60"
+                x2="392"
+                y2="60"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arr)"
+              />
+              <!-- Output box -->
+              <rect
+                x="394"
+                y="35"
+                width="130"
+                height="50"
+                rx="8"
+                fill="rgba(6,182,212,0.12)"
+                stroke="#06b6d4"
+                stroke-width="1.5"
+              />
+              <text
+                x="459"
+                y="57"
+                text-anchor="middle"
+                fill="#67e8f9"
+                font-size="11"
+                font-family="Inter,sans-serif"
+                font-weight="600"
+              >
+                HASH (DIGEST)
+              </text>
+              <text
+                x="459"
+                y="74"
+                text-anchor="middle"
+                fill="#06b6d4"
+                font-size="10"
+                font-family="Inter,sans-serif"
+              >
+                tamaño fijo siempre
+              </text>
+              <!-- No-arrow back -->
+              <line
+                x1="400"
+                y1="100"
+                x2="200"
+                y2="100"
+                stroke="#ef4444"
+                stroke-width="1.5"
+                stroke-dasharray="4,3"
+              />
+              <text
+                x="300"
+                y="115"
+                text-anchor="middle"
+                fill="#f87171"
+                font-size="10"
+                font-family="Inter,sans-serif"
+              >
+                NO reversible
+              </text>
+              <!-- Examples -->
+              <text
+                x="75"
+                y="110"
+                text-anchor="middle"
+                fill="#475569"
+                font-size="10"
+                font-family="monospace"
+              >
+                «Hola» / 5GB ISO
+              </text>
+              <text
+                x="459"
+                y="110"
+                text-anchor="middle"
+                fill="#475569"
+                font-size="10"
+                font-family="monospace"
+              >
+                64 hex chars (SHA-256)
+              </text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <h3>Entrada Arbitraria</h3>
+            <p>
+              Acepta desde un byte hasta terabytes. Un tweet y un vídeo 4K
+              producen hashes del mismo tamaño.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Salida Fija</h3>
+            <p>
+              SHA-256 siempre produce 256 bits (64 caracteres hex). Sin importar
+              el tamaño de la entrada.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Unidireccional</h3>
+            <p>
+              No existe operación inversa matemáticamente eficiente. A
+              diferencia de RSA, no hay clave para revertirlo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ PROPIEDADES ══════════════════ -->
+    <section id="propiedades">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Las 5 Propiedades Fundamentales</h2></div>
+        </div>
+        <p class="section-desc">
+          Toda función hash criptográfica segura debe cumplir estas cinco
+          propiedades.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px">
+          <div class="prop-card blue">
+            <div class="prop-tag">Propiedad 1</div>
+            <div class="prop-title">
+              Resistencia a Pre-imagen (Unidireccionalidad)
+            </div>
+            <div class="prop-desc">
+              Dado el hash <code>h</code>, es computacionalmente imposible
+              encontrar el mensaje <code>m</code> tal que <code>H(m) = h</code>.
+              Garantiza que las contraseñas hasheadas no puedan revertirse.
+            </div>
+          </div>
+          <div class="prop-card purple">
+            <div class="prop-tag">Propiedad 2</div>
+            <div class="prop-title">Determinismo</div>
+            <div class="prop-desc">
+              La misma entrada siempre produce exactamente el mismo hash.
+              <code>SHA256("Hola")</code> será idéntico en cualquier
+              computadora, en cualquier momento.
+            </div>
+          </div>
+          <div class="prop-card yellow">
+            <div class="prop-tag">Propiedad 3</div>
+            <div class="prop-title">Efecto Avalancha</div>
+            <div class="prop-desc">
+              Cambiar un solo bit en la entrada altera alrededor del 50% de los
+              bits en la salida. Un espacio de diferencia entre "Hola" y "hola"
+              produce hashes completamente distintos.
+            </div>
+          </div>
+          <div class="prop-card green">
+            <div class="prop-tag">Propiedad 4</div>
+            <div class="prop-title">Resistencia a Colisiones</div>
+            <div class="prop-desc">
+              Es computacionalmente inviable encontrar dos mensajes distintos
+              <code>m₁ ≠ m₂</code> que produzcan el mismo hash
+              <code>H(m₁) = H(m₂)</code>. MD5 y SHA-1 han fallado aquí.
+            </div>
+          </div>
+          <div class="prop-card cyan">
+            <div class="prop-tag">Propiedad 5</div>
+            <div class="prop-title">Resistencia a Segunda Pre-imagen</div>
+            <div class="prop-desc">
+              Dado un mensaje <code>m₁</code>, no se puede encontrar
+              <code>m₂ ≠ m₁</code> con el mismo hash. Garantiza que un atacante
+              no pueda sustituir un documento firmado por otro con el mismo
+              hash.
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="info-box">
+          <strong>¿Por qué los hashes son unidireccionales?</strong> A
+          diferencia de RSA donde la operación de descifrado es matemáticamente
+          la inversa del cifrado (usando la clave privada), las funciones hash
+          mezclan los bits del mensaje de forma tan no-lineal —usando XOR,
+          rotaciones, módulos y funciones de compresión iterativas
+          (Merkle-Damgård o Sponge)— que no existe operación inversa
+          algebraicamente tratable. Es como intentar reconstruir un huevo frito
+          a partir de un omelet.
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ ALGORITMOS ══════════════════ -->
+    <section id="algoritmos">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Algoritmos Hash: Comparativa</h2></div>
+        </div>
+        <p class="section-desc">
+          Desde los algoritmos obsoletos hasta los más modernos. Elige
+          sabiamente según tu caso de uso.
+        </p>
+
+        <div class="overflow-x" style="margin-bottom: 32px">
+          <table class="algo-table">
+            <thead>
+              <tr>
+                <th>Algoritmo</th>
+                <th>Bits</th>
+                <th>Estado</th>
+                <th>Velocidad (CPU)</th>
+                <th>Uso recomendado</th>
+                <th>Notas clave</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>MD5</strong></td>
+                <td>128</td>
+                <td><span class="badge badge-red">ROTO</span></td>
+                <td>~500 MB/s</td>
+                <td>Checksums no críticos</td>
+                <td>Colisiones prácticas desde 2004. Wang et al.</td>
+              </tr>
+              <tr>
+                <td><strong>SHA-1</strong></td>
+                <td>160</td>
+                <td><span class="badge badge-red">ROTO</span></td>
+                <td>~300 MB/s</td>
+                <td>Ninguno nuevo (legado Git)</td>
+                <td>SHAttered (Google 2017). Eliminado de TLS 1.3.</td>
+              </tr>
+              <tr>
+                <td><strong>SHA-256</strong></td>
+                <td>256</td>
+                <td><span class="badge badge-green">SEGURO</span></td>
+                <td>~250 MB/s</td>
+                <td>Integridad, firma digital, blockchain</td>
+                <td>Estándar actual. Sin colisiones conocidas.</td>
+              </tr>
+              <tr>
+                <td><strong>SHA-512</strong></td>
+                <td>512</td>
+                <td><span class="badge badge-green">SEGURO</span></td>
+                <td>~350 MB/s</td>
+                <td>Integridad de alta seguridad</td>
+                <td>Más rápido que SHA-256 en sistemas 64-bit.</td>
+              </tr>
+              <tr>
+                <td><strong>SHA-3 (Keccak)</strong></td>
+                <td>224–512</td>
+                <td><span class="badge badge-green">SEGURO</span></td>
+                <td>~150 MB/s</td>
+                <td>Plan B de SHA-2, Ethereum</td>
+                <td>Sponge construction. Resistente a length extension.</td>
+              </tr>
+              <tr>
+                <td><strong>BLAKE3</strong></td>
+                <td>256+</td>
+                <td><span class="badge badge-blue">MODERNO</span></td>
+                <td>~3 GB/s</td>
+                <td>Integridad de archivos, hash general</td>
+                <td>
+                  5-10× más rápido que SHA-256. Paralelizable. Merkle tree
+                  interno.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Argon2id</strong></td>
+                <td>variable</td>
+                <td><span class="badge badge-purple">CONTRASEÑAS</span></td>
+                <td>~100ms/hash</td>
+                <td>Contraseñas, KDF</td>
+                <td>Ganador PHC 2015. Memory-hard. Recomendado OWASP.</td>
+              </tr>
+              <tr>
+                <td><strong>bcrypt</strong></td>
+                <td>192</td>
+                <td><span class="badge badge-yellow">ACEPTABLE</span></td>
+                <td>~300ms/hash</td>
+                <td>Contraseñas (legado)</td>
+                <td>Límite de 72 bytes de entrada. Antiguo pero probado.</td>
+              </tr>
+              <tr>
+                <td><strong>scrypt</strong></td>
+                <td>variable</td>
+                <td><span class="badge badge-yellow">ACEPTABLE</span></td>
+                <td>variable</td>
+                <td>Contraseñas, Litecoin PoW</td>
+                <td>Memory-hard. Precursor de Argon2. Parámetros complejos.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="warn-box">
+          <strong>Regla de oro:</strong> Nunca uses SHA-256, SHA-512 o
+          cualquier hash de propósito general directamente para almacenar
+          contraseñas. Son demasiado rápidos — una RTX 4090 calcula
+          <strong>22,000 millones de SHA-256 por segundo</strong>. Usa Argon2id,
+          que es memory-hard y GPU-resistant por diseño.
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ LABORATORIO ══════════════════ -->
+    <section id="lab">
+      <div class="container">
+        <div class="section-header">
+
+          <div>
+            <h2>Laboratorio Visual Interactivo</h2>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 4px;
+              "
+            >
+              <span class="pulse-dot"></span>
+              <span style="font-size: 12px; color: var(--text-faint)"
+                >Web Crypto API activa — cómputo real en el navegador</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs-wrapper">
+          <div class="tabs-nav">
+            <button
+              class="tab-btn active"
+              onclick="switchTab(this, 'tab-calc')"
+            >
+              Calculadora Hash
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-avalanche')">
+              Efecto Avalancha
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-salt')">
+              Simulador Salt
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-speed')">
+              Velocidad Comparada
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-sigdiag')">
+              Flujo Firma Digital
+            </button>
+          </div>
+
+          <!-- Tab: Calculadora -->
+          <div class="tab-panel active" id="tab-calc">
+            <div style="display: grid; gap: 20px">
+              <div>
+                <label for="hash-input">Texto de entrada</label>
+                <textarea
+                  id="hash-input"
+                  placeholder="Escribe cualquier texto aquí…"
+                  rows="3"
+                  oninput="calcHash()"
+                >
+Hola, mundo criptográfico!</textarea
+                >
+              </div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                <button class="btn btn-primary btn-sm" onclick="calcHash()">
+                  Calcular SHA-256
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="
+                    document.getElementById('hash-input').value = '';
+                    calcHash();
+                  "
+                >
+                  Limpiar
+                </button>
+              </div>
+              <div>
+                <label>SHA-256 (hex)</label>
+                <div class="hash-output" id="hash-result-hex">—</div>
+              </div>
+              <div>
+                <label>SHA-256 (base64)</label>
+                <div class="hash-output" id="hash-result-b64">—</div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                  gap: 12px;
+                "
+              >
+                <div class="diff-stat">
+                  <div class="diff-stat-value" id="char-count">0</div>
+                  <div class="diff-stat-label">Caracteres entrada</div>
+                </div>
+                <div class="diff-stat">
+                  <div class="diff-stat-value">256</div>
+                  <div class="diff-stat-label">Bits de salida</div>
+                </div>
+                <div class="diff-stat">
+                  <div class="diff-stat-value">64</div>
+                  <div class="diff-stat-label">Chars hex salida</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Avalancha -->
+          <div class="tab-panel" id="tab-avalanche">
+            <p
+              style="
+                font-size: 14px;
+                color: var(--text-dim);
+                margin-bottom: 20px;
+              "
+            >
+              Modifica cualquier carácter del mensaje y observa cómo cambia
+              radicalmente el hash. Cada celda roja = bit diferente.
+            </p>
+            <div class="compare-section" style="margin-bottom: 20px">
+              <div>
+                <label>Mensaje original</label>
+                <input
+                  type="text"
+                  id="av-text1"
+                  value="Hola mundo"
+                  oninput="runAvalanche()"
+                />
+                <div style="margin-top: 10px">
+                  <label>Hash</label>
+                  <div
+                    class="hash-output"
+                    id="av-hash1"
+                    style="font-size: 11px"
+                  >
+                    —
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label>Mensaje modificado</label>
+                <input
+                  type="text"
+                  id="av-text2"
+                  value="hola mundo"
+                  oninput="runAvalanche()"
+                />
+                <div style="margin-top: 10px">
+                  <label>Hash</label>
+                  <div
+                    class="hash-output"
+                    id="av-hash2"
+                    style="font-size: 11px"
+                  >
+                    —
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                margin-bottom: 16px;
+              "
+            >
+              <div class="diff-stat">
+                <div class="diff-stat-value" id="av-bits-diff">—</div>
+                <div class="diff-stat-label">Bits diferentes</div>
+              </div>
+              <div class="diff-stat">
+                <div class="diff-stat-value" id="av-pct">—</div>
+                <div class="diff-stat-label">% diferencia</div>
+              </div>
+              <div class="diff-stat">
+                <div class="diff-stat-value">256</div>
+                <div class="diff-stat-label">Bits totales</div>
+              </div>
+            </div>
+            <label>Mapa de bits (azul = igual, rojo = diferente)</label>
+            <canvas id="avalanche-canvas"></canvas>
+          </div>
+
+          <!-- Tab: Salt -->
+          <div class="tab-panel" id="tab-salt">
+            <p
+              style="
+                font-size: 14px;
+                color: var(--text-dim);
+                margin-bottom: 20px;
+              "
+            >
+              Mismo password, distintos salts → hashes completamente diferentes.
+              Así se invalidan las Rainbow Tables.
+            </p>
+            <div
+              style="
+                display: flex;
+                gap: 12px;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+              "
+            >
+              <div style="flex: 1; min-width: 200px">
+                <label>Password</label>
+                <input type="text" id="salt-password" value="contraseña123" />
+              </div>
+              <div style="display: flex; align-items: flex-end; gap: 8px">
+                <button class="btn btn-primary btn-sm" onclick="addSalt()">
+                  Generar salt aleatorio
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="clearSalts()">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+            <div
+              style="
+                background: var(--bg3);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 16px;
+              "
+            >
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 80px 1fr 2fr;
+                  gap: 8px;
+                  padding-bottom: 8px;
+                  border-bottom: 1px solid var(--border);
+                  margin-bottom: 8px;
+                "
+              >
+                <span
+                  style="
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    color: var(--text-faint);
+                  "
+                  >#</span
+                >
+                <span
+                  style="
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    color: var(--text-faint);
+                  "
+                  >Salt (hex)</span
+                >
+                <span
+                  style="
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    color: var(--text-faint);
+                  "
+                  >SHA-256(salt + password)</span
+                >
+              </div>
+              <div id="salt-results">
+                <div
+                  style="
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--text-faint);
+                    font-size: 13px;
+                  "
+                >
+                  Haz clic en "Generar salt aleatorio" para empezar
+                </div>
+              </div>
+            </div>
+            <div class="info-box" style="margin-top: 16px">
+              En la práctica, el salt se almacena junto al hash (en texto
+              plano, no necesita ser secreto). Al verificar la contraseña se
+              rehashea con el mismo salt almacenado.
+            </div>
+          </div>
+
+          <!-- Tab: Velocidad -->
+          <div class="tab-panel" id="tab-speed">
+            <p
+              style="
+                font-size: 14px;
+                color: var(--text-dim);
+                margin-bottom: 24px;
+              "
+            >
+              La diferencia de velocidad entre un hash general y uno diseñado
+              para contraseñas es la diferencia entre seguridad y
+              vulnerabilidad.
+            </p>
+            <div id="speed-bars">
+              <div class="speed-bar-wrap">
+                <div class="speed-label">
+                  <span><strong>BLAKE3</strong> — propósito general</span>
+                  <span style="color: var(--text-faint)"
+                    >~10,000 millones hash/seg (GPU)</span
+                  >
+                </div>
+                <div class="speed-bar-bg">
+                  <div
+                    class="speed-bar-fill"
+                    id="bar-blake3"
+                    style="background: linear-gradient(90deg, #06b6d4, #3b82f6)"
+                  >
+                    demasiado rápido para contraseñas
+                  </div>
+                </div>
+              </div>
+              <div class="speed-bar-wrap">
+                <div class="speed-label">
+                  <span><strong>SHA-256</strong> — propósito general</span>
+                  <span style="color: var(--text-faint)"
+                    >~22,000 millones hash/seg (RTX 4090)</span
+                  >
+                </div>
+                <div class="speed-bar-bg">
+                  <div
+                    class="speed-bar-fill"
+                    id="bar-sha256"
+                    style="background: linear-gradient(90deg, #f59e0b, #ef4444)"
+                  >
+                    22B/seg — cualquier contraseña en minutos
+                  </div>
+                </div>
+              </div>
+              <div class="speed-bar-wrap">
+                <div class="speed-label">
+                  <span><strong>bcrypt</strong> (cost=12) — contraseñas</span>
+                  <span style="color: var(--text-faint)"
+                    >~10,000 hash/seg (RTX 4090)</span
+                  >
+                </div>
+                <div class="speed-bar-bg">
+                  <div
+                    class="speed-bar-fill"
+                    id="bar-bcrypt"
+                    style="background: linear-gradient(90deg, #a855f7, #ec4899)"
+                  >
+                    10K/seg — mucho mejor
+                  </div>
+                </div>
+              </div>
+              <div class="speed-bar-wrap">
+                <div class="speed-label">
+                  <span
+                    ><strong>Argon2id</strong> (recomendado OWASP) —
+                    contraseñas</span
+                  >
+                  <span style="color: var(--text-faint)"
+                    >~100 hash/seg (RTX 4090 con 64MB mem)</span
+                  >
+                </div>
+                <div class="speed-bar-bg">
+                  <div
+                    class="speed-bar-fill"
+                    id="bar-argon2"
+                    style="background: linear-gradient(90deg, #22c55e, #06b6d4)"
+                  >
+                    100/seg — memory-hard, GPU ineficiente
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="warn-box" style="margin-top: 24px">
+              <strong>Implicación real:</strong> Con SHA-256 puro, una RTX
+              4090 puede probar todo el espacio de contraseñas de 8 caracteres
+              alfanuméricos en <strong>menos de 1 segundo</strong>. Con Argon2id
+              tardaría <strong>siglos</strong>.
+            </div>
+          </div>
+
+          <!-- Tab: Firma Digital -->
+          <div class="tab-panel" id="tab-sigdiag">
+            <p
+              style="
+                font-size: 14px;
+                color: var(--text-dim);
+                margin-bottom: 20px;
+              "
+            >
+              Flujo completo de una firma digital: SHA-256 genera el hash que
+              RSA firma. La verificación usa la clave pública.
+            </p>
+            <svg
+              id="sig-diagram"
+              viewBox="0 0 780 320"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <marker
+                  id="arrow"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="6"
+                  refY="3"
+                  orient="auto"
+                >
+                  <path d="M0,0 L0,6 L8,3 z" fill="#60a5fa" />
+                </marker>
+              </defs>
+
+              <!-- === SIGNING === -->
+              <text
+                x="10"
+                y="22"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#475569"
+                letter-spacing="1"
+              >
+                FIRMA (EMISOR)
+              </text>
+
+              <!-- Doc -->
+              <rect
+                x="10"
+                y="32"
+                width="100"
+                height="50"
+                rx="8"
+                fill="rgba(59,130,246,0.12)"
+                stroke="#3b82f6"
+                stroke-width="1.5"
+              />
+              <text
+                x="60"
+                y="52"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#93c5fd"
+              >
+                Documento
+              </text>
+              <text
+                x="60"
+                y="67"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#60a5fa"
+              >
+                original
+              </text>
+
+              <!-- Arrow -->
+              <line
+                x1="112"
+                y1="57"
+                x2="148"
+                y2="57"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- SHA-256 -->
+              <rect
+                x="150"
+                y="32"
+                width="110"
+                height="50"
+                rx="8"
+                fill="rgba(168,85,247,0.15)"
+                stroke="#a855f7"
+                stroke-width="1.5"
+              />
+              <text
+                x="205"
+                y="52"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#c084fc"
+              >
+                SHA-256
+              </text>
+              <text
+                x="205"
+                y="67"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#a855f7"
+              >
+                H(doc)
+              </text>
+
+              <!-- Arrow -->
+              <line
+                x1="262"
+                y1="57"
+                x2="298"
+                y2="57"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- Hash value -->
+              <rect
+                x="300"
+                y="32"
+                width="120"
+                height="50"
+                rx="8"
+                fill="rgba(6,182,212,0.12)"
+                stroke="#06b6d4"
+                stroke-width="1.5"
+              />
+              <text
+                x="360"
+                y="52"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#67e8f9"
+              >
+                Hash (256 bits)
+              </text>
+              <text
+                x="360"
+                y="67"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#06b6d4"
+              >
+                3a7f2b...
+              </text>
+
+              <!-- Arrow -->
+              <line
+                x1="422"
+                y1="57"
+                x2="458"
+                y2="57"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- RSA sign -->
+              <rect
+                x="460"
+                y="25"
+                width="120"
+                height="64"
+                rx="8"
+                fill="rgba(245,158,11,0.12)"
+                stroke="#f59e0b"
+                stroke-width="1.5"
+              />
+              <text
+                x="520"
+                y="48"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#fbbf24"
+              >
+                RSA Cifrar
+              </text>
+              <text
+                x="520"
+                y="63"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#f59e0b"
+              >
+                clave privada
+              </text>
+              <text
+                x="520"
+                y="78"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#78716c"
+              >
+                Enc_priv(hash)
+              </text>
+
+              <!-- Arrow -->
+              <line
+                x1="582"
+                y1="57"
+                x2="618"
+                y2="57"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- Firma -->
+              <rect
+                x="620"
+                y="32"
+                width="110"
+                height="50"
+                rx="8"
+                fill="rgba(239,68,68,0.12)"
+                stroke="#ef4444"
+                stroke-width="1.5"
+              />
+              <text
+                x="675"
+                y="52"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#f87171"
+              >
+                Firma Digital
+              </text>
+              <text
+                x="675"
+                y="67"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#ef4444"
+              >
+                adjuntar al doc
+              </text>
+
+              <!-- Divider -->
+              <line
+                x1="0"
+                y1="120"
+                x2="780"
+                y2="120"
+                stroke="#334155"
+                stroke-width="1"
+                stroke-dasharray="4,4"
+              />
+
+              <!-- === VERIFICATION === -->
+              <text
+                x="10"
+                y="142"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#475569"
+                letter-spacing="1"
+              >
+                VERIFICACIÓN (RECEPTOR)
+              </text>
+
+              <!-- Doc received -->
+              <rect
+                x="10"
+                y="152"
+                width="100"
+                height="50"
+                rx="8"
+                fill="rgba(59,130,246,0.12)"
+                stroke="#3b82f6"
+                stroke-width="1.5"
+              />
+              <text
+                x="60"
+                y="172"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#93c5fd"
+              >
+                Documento
+              </text>
+              <text
+                x="60"
+                y="187"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#60a5fa"
+              >
+                recibido
+              </text>
+
+              <!-- SHA-256 again -->
+              <line
+                x1="112"
+                y1="177"
+                x2="148"
+                y2="177"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+              <rect
+                x="150"
+                y="152"
+                width="110"
+                height="50"
+                rx="8"
+                fill="rgba(168,85,247,0.15)"
+                stroke="#a855f7"
+                stroke-width="1.5"
+              />
+              <text
+                x="205"
+                y="172"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#c084fc"
+              >
+                SHA-256
+              </text>
+              <text
+                x="205"
+                y="187"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#a855f7"
+              >
+                H'(doc)
+              </text>
+
+              <!-- Hash result -->
+              <line
+                x1="262"
+                y1="177"
+                x2="298"
+                y2="177"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+              <rect
+                x="300"
+                y="152"
+                width="120"
+                height="50"
+                rx="8"
+                fill="rgba(6,182,212,0.12)"
+                stroke="#06b6d4"
+                stroke-width="1.5"
+              />
+              <text
+                x="360"
+                y="172"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#67e8f9"
+              >
+                Hash calculado
+              </text>
+              <text
+                x="360"
+                y="187"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#06b6d4"
+              >
+                3a7f2b... ?
+              </text>
+
+              <!-- Firma recibida -->
+              <rect
+                x="620"
+                y="152"
+                width="110"
+                height="50"
+                rx="8"
+                fill="rgba(239,68,68,0.12)"
+                stroke="#ef4444"
+                stroke-width="1.5"
+              />
+              <text
+                x="675"
+                y="172"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#f87171"
+              >
+                Firma recibida
+              </text>
+              <text
+                x="675"
+                y="187"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#ef4444"
+              >
+                del documento
+              </text>
+
+              <!-- RSA verify -->
+              <line
+                x1="618"
+                y1="177"
+                x2="582"
+                y2="177"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+              <rect
+                x="460"
+                y="145"
+                width="120"
+                height="64"
+                rx="8"
+                fill="rgba(34,197,94,0.12)"
+                stroke="#22c55e"
+                stroke-width="1.5"
+              />
+              <text
+                x="520"
+                y="168"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#4ade80"
+              >
+                RSA Descifrar
+              </text>
+              <text
+                x="520"
+                y="183"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="10"
+                fill="#22c55e"
+              >
+                🔓 clave pública
+              </text>
+              <text
+                x="520"
+                y="198"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#166534"
+              >
+                Dec_pub(firma)
+              </text>
+
+              <!-- Hash extraído -->
+              <line
+                x1="458"
+                y1="177"
+                x2="422"
+                y2="177"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+              <rect
+                x="300"
+                y="225"
+                width="120"
+                height="50"
+                rx="8"
+                fill="rgba(245,158,11,0.12)"
+                stroke="#f59e0b"
+                stroke-width="1.5"
+              />
+              <text
+                x="360"
+                y="245"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="11"
+                font-weight="600"
+                fill="#fbbf24"
+              >
+                Hash extraído
+              </text>
+              <text
+                x="360"
+                y="260"
+                text-anchor="middle"
+                font-family="monospace"
+                font-size="9"
+                fill="#f59e0b"
+              >
+                3a7f2b... (firmado)
+              </text>
+
+              <!-- Compare arrow from RSA -->
+              <line
+                x1="460"
+                y1="195"
+                x2="420"
+                y2="250"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- Compare = -->
+              <text
+                x="430"
+                y="215"
+                font-family="Inter,sans-serif"
+                font-size="18"
+                font-weight="800"
+                fill="#475569"
+              >
+                ==
+              </text>
+
+              <!-- Arrow from hash calc to compare -->
+              <line
+                x1="360"
+                y1="202"
+                x2="360"
+                y2="223"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+
+              <!-- Result -->
+              <rect
+                x="460"
+                y="230"
+                width="120"
+                height="50"
+                rx="8"
+                fill="rgba(34,197,94,0.15)"
+                stroke="#22c55e"
+                stroke-width="2"
+              />
+              <text
+                x="520"
+                y="252"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="12"
+                font-weight="700"
+                fill="#4ade80"
+              >
+                VÁLIDO
+              </text>
+              <text
+                x="520"
+                y="268"
+                text-anchor="middle"
+                font-family="Inter,sans-serif"
+                font-size="10"
+                fill="#22c55e"
+              >
+                si H' == H_extraído
+              </text>
+
+              <!-- Arrow to result -->
+              <line
+                x1="422"
+                y1="255"
+                x2="458"
+                y2="255"
+                stroke="#22c55e"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ ATAQUES ══════════════════ -->
+    <section id="ataques">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Ataques y Mitigaciones</h2></div>
+        </div>
+        <p class="section-desc">
+          Conocer los vectores de ataque es esencial para elegir la mitigación
+          correcta.
+        </p>
+
+        <div class="grid grid-3" style="gap: 20px">
+          <div class="attack-card">
+            <div class="attack-title">Rainbow Tables</div>
+            <p
+              style="
+                font-size: 13px;
+                color: var(--text-dim);
+                margin-bottom: 8px;
+              "
+            >
+              Tablas precalculadas de pares <code>hash → texto</code>. Si tu
+              base de datos se filtra, el atacante busca el hash y recupera la
+              contraseña original en microsegundos.
+            </p>
+            <p style="font-size: 12px; color: var(--text-faint)">
+              <strong>¿Por qué funciona?</strong> SHA-256("password") siempre da
+              el mismo hash, y ese hash ya está en la tabla.
+            </p>
+            <div class="mitigation">
+              <strong>Mitigación</strong>
+              Salt aleatorio único por usuario (<code>os.urandom(32)</code>). El
+              salt hace que SHA-256("salt123" + "password") sea único,
+              invalidando toda la tabla precalculada.
+            </div>
+          </div>
+          <div class="attack-card">
+            <div class="attack-title">Length Extension Attack</div>
+            <p
+              style="
+                font-size: 13px;
+                color: var(--text-dim);
+                margin-bottom: 8px;
+              "
+            >
+              SHA-1, SHA-256, SHA-512 (Merkle-Damgård) permiten calcular
+              <code>H(secreto || mensaje || extensión)</code> sin conocer el
+              secreto, solo conociendo <code>H(secreto || mensaje)</code>.
+            </p>
+            <p style="font-size: 12px; color: var(--text-faint)">
+              <strong>¿Por qué funciona?</strong> El estado interno del hash al
+              final de un mensaje puede usarse como punto de partida para
+              extender el mensaje.
+            </p>
+            <div class="mitigation">
+              <strong>Mitigación</strong>
+              Usar HMAC en lugar de <code>H(secreto || mensaje)</code>. HMAC
+              realiza dos pasadas que eliminan esta vulnerabilidad. SHA-3 no es
+              vulnerable (Sponge construction).
+            </div>
+          </div>
+          <div class="attack-card">
+            <div class="attack-title">Fuerza Bruta GPU</div>
+            <p
+              style="
+                font-size: 13px;
+                color: var(--text-dim);
+                margin-bottom: 8px;
+              "
+            >
+              Una RTX 4090 calcula ~22 mil millones de SHA-256 por segundo. Con
+              diccionarios y reglas, puede quebrar contraseñas comunes en
+              segundos.
+            </p>
+            <p style="font-size: 12px; color: var(--text-faint)">
+              <strong>¿Por qué funciona?</strong> Las GPU tienen miles de cores
+              paralelos optimizados para exactamente el tipo de cómputo que
+              SHA-256 requiere.
+            </p>
+            <div class="mitigation">
+              <strong>Mitigación</strong>
+              Argon2id con memoria adaptativa (≥64MB). La GPU necesita esa
+              memoria para cada hash, y con 4GB de VRAM solo puede calcular ~60
+              hashes en paralelo en lugar de 22 billones.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ HMAC ══════════════════ -->
+    <section id="hmac">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>HMAC — Autenticación de Mensajes</h2></div>
+        </div>
+        <p class="section-desc">
+          SHA-256 verifica integridad (¿el archivo cambió?), pero HMAC añade
+          autenticidad (¿quién lo creó?).
+        </p>
+
+        <div class="grid grid-2" style="margin-bottom: 28px">
+          <div class="card">
+            <h3>Solo Hash (SHA-256)</h3>
+            <p style="margin-bottom: 12px">
+              Verifica que los datos no cambaron en tránsito. Pero cualquiera
+              puede modificar los datos <em>y</em> recalcular el hash. Sin clave
+              secreta = sin autenticidad.
+            </p>
+            <div
+              style="
+                font-family: monospace;
+                font-size: 12px;
+                color: var(--text-faint);
+              "
+            >
+              H(mensaje) → integridad [ok]<br />¿quién lo firmó? [desconocido]
+            </div>
+          </div>
+          <div class="card">
+            <h3>HMAC (Hash + Clave)</h3>
+            <p style="margin-bottom: 12px">
+              Combina una clave secreta compartida con el mensaje. Solo quien
+              conoce la clave puede producir o verificar el MAC. Integridad +
+              autenticidad.
+            </p>
+            <div
+              style="
+                font-family: monospace;
+                font-size: 12px;
+                color: var(--green);
+              "
+            >
+              HMAC(K, mensaje) → integridad [ok]<br />y autenticidad [ok] (solo K puede firmarlo)
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+          "
+        >
+          <h3 style="margin-bottom: 12px; font-size: 15px">
+            Construcción HMAC
+          </h3>
+          <div class="formula-box">
+            HMAC(K, m) = H( (K' ⊕ opad) ‖ H( (K' ⊕ ipad) ‖ m ) )
+          </div>
+          <div class="grid grid-3" style="margin-top: 16px">
+            <div class="card" style="border: none; background: var(--bg3)">
+              <div
+                style="
+                  color: var(--yellow);
+                  font-weight: 700;
+                  margin-bottom: 4px;
+                  font-size: 13px;
+                "
+              >
+                K'
+              </div>
+              <p style="font-size: 12px">
+                Clave K con padding al tamaño del bloque hash (64 bytes para
+                SHA-256)
+              </p>
+            </div>
+            <div class="card" style="border: none; background: var(--bg3)">
+              <div
+                style="
+                  color: var(--blue-bright);
+                  font-weight: 700;
+                  margin-bottom: 4px;
+                  font-size: 13px;
+                "
+              >
+                ipad / opad
+              </div>
+              <p style="font-size: 12px">
+                Constantes de relleno interior (0x36) y exterior (0x5c). Crean
+                dos sub-claves distintas.
+              </p>
+            </div>
+            <div class="card" style="border: none; background: var(--bg3)">
+              <div
+                style="
+                  color: var(--green);
+                  font-weight: 700;
+                  margin-bottom: 4px;
+                  font-size: 13px;
+                "
+              >
+                2 pasadas
+              </div>
+              <p style="font-size: 12px">
+                Las dos pasadas eliminan la vulnerabilidad de length extension.
+                La pasada exterior envuelve la interior.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HMAC Interactivo -->
+        <div
+          style="
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+          "
+        >
+          <h3 style="margin-bottom: 16px; font-size: 15px">
+            HMAC Interactivo (HMAC-SHA256)
+          </h3>
+          <div class="grid grid-2" style="margin-bottom: 16px">
+            <div>
+              <label>Clave secreta</label>
+              <input
+                type="text"
+                id="hmac-key"
+                value="mi_clave_secreta_2024"
+                oninput="calcHMAC()"
+              />
+            </div>
+            <div>
+              <label>Mensaje</label>
+              <input
+                type="text"
+                id="hmac-msg"
+                value="cantidad=100&destinatario=alice"
+                oninput="calcHMAC()"
+              />
+            </div>
+          </div>
+          <label>HMAC-SHA256</label>
+          <div class="hmac-output" id="hmac-result">Calculando…</div>
+          <div class="info-box" style="margin-top: 16px">
+            <strong>Casos de uso:</strong> Autenticar webhooks (GitHub,
+            Stripe), firmar JWT, validar requests de API, cookies de sesión,
+            verificar integridad de archivos descargados.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ BUENAS PRÁCTICAS ══════════════════ -->
+    <section id="buenas-practicas">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Buenas Prácticas de Seguridad</h2></div>
+        </div>
+        <p class="section-desc">
+          Reglas críticas que separan el código seguro del vulnerable.
+        </p>
+
+        <div
+          style="
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+          "
+        >
+          <div class="bp-item">
+            <div class="bp-icon warn"></div>
+            <div class="bp-content">
+              <h4>Nunca SHA-256 directo para contraseñas</h4>
+              <p>
+                SHA-256 es demasiado rápido (22B/seg en GPU). Usa
+                <strong>Argon2id</strong> que es memory-hard y GPU-resistant.
+                Configuración mínima OWASP: <code>m=65536, t=3, p=4</code>.
+              </p>
+            </div>
+          </div>
+          <div class="bp-item">
+            <div class="bp-icon warn"></div>
+            <div class="bp-content">
+              <h4>Nunca construir MAC como H(secreto ‖ mensaje)</h4>
+              <p>
+                Vulnerable a Length Extension Attack. Siempre usa
+                <strong>HMAC</strong>:
+                <code>hmac.new(key, msg, hashlib.sha256).hexdigest()</code>.
+              </p>
+            </div>
+          </div>
+          <div class="bp-item">
+            <div class="bp-icon ok"></div>
+            <div class="bp-content">
+              <h4>Salt aleatorio único por usuario</h4>
+              <p>
+                Usar <code>os.urandom(32)</code> para generar un salt
+                criptográficamente seguro. Almacenar el salt junto al hash (es
+                público, no secreto). Invalida rainbow tables.
+              </p>
+            </div>
+          </div>
+          <div class="bp-item">
+            <div class="bp-icon ok"></div>
+            <div class="bp-content">
+              <h4>Comparación en tiempo constante</h4>
+              <p>
+                Usa <code>hmac.compare_digest(hash_a, hash_b)</code> en lugar de
+                <code>==</code>. El operador <code>==</code> retorna al primer
+                byte diferente, permitiendo <strong>timing attacks</strong> que
+                revelan cuántos bytes coinciden.
+              </p>
+            </div>
+          </div>
+          <div class="bp-item">
+            <div class="bp-icon ok"></div>
+            <div class="bp-content">
+              <h4>Migrar de MD5/SHA-1 ya</h4>
+              <p>
+                MD5 y SHA-1 tienen colisiones prácticas demostradas. SHA-1 fue
+                eliminado de TLS 1.3. Si los usas para integridad o firmas,
+                migra a SHA-256 o BLAKE3 inmediatamente.
+              </p>
+            </div>
+          </div>
+          <div class="bp-item" style="border-bottom: none">
+            <div class="bp-icon ok"></div>
+            <div class="bp-content">
+              <h4>SHA-3 como Plan B</h4>
+              <p>
+                Si SHA-2 fuera comprometido, SHA-3 (Keccak) está disponible. Usa
+                una construcción Sponge completamente diferente, por lo que
+                vulnerabilidades en SHA-2 no afectarían a SHA-3.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ APLICACIONES ══════════════════ -->
+    <section id="aplicaciones">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Aplicaciones en el Mundo Real</h2></div>
+        </div>
+        <p class="section-desc">
+          Las funciones hash están en todas partes del ecosistema digital
+          moderno.
+        </p>
+
+        <div class="grid grid-3">
+          <div class="app-card">
+            <div>
+              <div class="app-name">Integridad de Archivos</div>
+              <div class="app-desc">
+                Distribuciones Linux publican
+                <code>sha256sum ubuntu.iso</code> para verificar que la descarga
+                no fue corrompida o manipulada.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Protección de Contraseñas</div>
+              <div class="app-desc">
+                Las bases de datos almacenan
+                <code>argon2id(salt + password)</code>, nunca la contraseña en
+                texto plano. La contraseña nunca sale del cliente.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Firmas Digitales</div>
+              <div class="app-desc">
+                RSA y ECDSA no cifran el documento completo, cifran el
+                <em>hash</em> del documento. Mucho más eficiente y seguro.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Blockchain / Bitcoin</div>
+              <div class="app-desc">
+                SHA-256 encadena bloques y es la base del Proof of Work. Cada
+                bloque contiene el hash del bloque anterior, creando
+                inmutabilidad.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Git</div>
+              <div class="app-desc">
+                Cada commit, árbol y blob es identificado por su SHA-1 (migrando
+                a SHA-256). El hash es la identidad del objeto en Git.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Detección de Malware</div>
+              <div class="app-desc">
+                Antivirus y VirusTotal identifican amenazas por el hash del
+                archivo. Una modificación de un byte genera un hash
+                completamente diferente.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">Merkle Trees</div>
+              <div class="app-desc">
+                Verificación O(log n) de elementos en conjuntos masivos. Usado
+                en Bitcoin, Git, IPFS, ZFS y certificados de transparencia TLS.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">JWT / OAuth</div>
+              <div class="app-desc">
+                Los JSON Web Tokens usan HMAC-SHA256 o RSA-SHA256 para
+                garantizar que el payload no fue alterado entre emisión y
+                verificación.
+              </div>
+            </div>
+          </div>
+          <div class="app-card">
+            <div>
+              <div class="app-name">TLS / HTTPS</div>
+              <div class="app-desc">
+                Los certificados SSL/TLS son firmados con SHA-256. La huella
+                (fingerprint) del certificado permite verificar la identidad del
+                servidor.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ CÓDIGO ══════════════════ -->
+    <section id="codigo">
+      <div class="container">
+        <div class="section-header">
+
+          <div><h2>Ejemplos de Código</h2></div>
+        </div>
+        <p class="section-desc">
+          Implementaciones limpias en Python siguiendo las mejores prácticas de
+          seguridad.
+        </p>
+
+        <div class="tabs-wrapper">
+          <div class="tabs-nav">
+            <button
+              class="tab-btn active"
+              onclick="switchTab(this, 'codetab-sha256')"
+            >
+              SHA-256
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'codetab-argon2')">
+              Argon2id
+            </button>
+            <button class="tab-btn" onclick="switchTab(this, 'codetab-hmacpy')">
+              HMAC
+            </button>
+            <button
+              class="tab-btn"
+              onclick="switchTab(this, 'codetab-blake3py')"
+            >
+              BLAKE3
+            </button>
+          </div>
+
+          <div class="tab-panel active" id="codetab-sha256" style="padding: 0">
+            <div class="code-label" style="padding: 20px 24px 0">
+              Python — SHA-256 para integridad de archivos
+            </div>
+            <pre><code><span class="kw">import</span> hashlib
+
+<span class="cm"># Hash de un string simple</span>
+<span class="kw">def</span> <span class="fn">hash_string</span>(texto: <span class="nb">str</span>) -> <span class="nb">str</span>:
+    <span class="kw">return</span> hashlib.<span class="fn">sha256</span>(texto.<span class="fn">encode</span>(<span class="st">'utf-8'</span>)).<span class="fn">hexdigest</span>()
+
+<span class="cm"># Hash de archivos grandes (sin cargar todo en RAM)</span>
+<span class="kw">def</span> <span class="fn">hash_file</span>(path: <span class="nb">str</span>) -> <span class="nb">str</span>:
+    h = hashlib.<span class="fn">sha256</span>()
+    <span class="kw">with</span> <span class="fn">open</span>(path, <span class="st">'rb'</span>) <span class="kw">as</span> f:
+        <span class="kw">for</span> chunk <span class="kw">in</span> <span class="fn">iter</span>(<span class="kw">lambda</span>: f.<span class="fn">read</span>(<span class="nb">65536</span>), <span class="nb">b''</span>):
+            h.<span class="fn">update</span>(chunk)   <span class="cm"># actualizar en chunks de 64KB</span>
+    <span class="kw">return</span> h.<span class="fn">hexdigest</span>()
+
+<span class="cm"># Verificar integridad</span>
+<span class="kw">def</span> <span class="fn">verify_file</span>(path: <span class="nb">str</span>, expected_hash: <span class="nb">str</span>) -> <span class="nb">bool</span>:
+    actual = <span class="fn">hash_file</span>(path)
+    <span class="kw">import</span> hmac
+    <span class="cm"># Comparación en tiempo constante (previene timing attacks)</span>
+    <span class="kw">return</span> hmac.<span class="fn">compare_digest</span>(actual, expected_hash)
+
+<span class="cm"># Uso</span>
+print(<span class="fn">hash_string</span>(<span class="st">"Hola mundo"</span>))
+<span class="cm"># → b94f6f125c79e3a5ffaa826f584c10d52ada669e6762051b826b55776d05a8a</span>
+
+print(<span class="fn">hash_file</span>(<span class="st">"ubuntu-24.04.iso"</span>))
+<span class="cm"># → (verificar contra sha256sum publicado por Ubuntu)</span></code></pre>
+          </div>
+
+          <div class="tab-panel" id="codetab-argon2" style="padding: 0">
+            <div class="code-label" style="padding: 20px 24px 0">
+              Python — Contraseñas con Argon2id (OWASP)
+            </div>
+            <pre><code><span class="cm"># pip install argon2-cffi</span>
+<span class="kw">from</span> argon2 <span class="kw">import</span> PasswordHasher
+<span class="kw">from</span> argon2.exceptions <span class="kw">import</span> VerifyMismatchError
+
+<span class="cm"># Configuración mínima recomendada por OWASP 2024</span>
+ph = <span class="fn">PasswordHasher</span>(
+    time_cost=<span class="nb">3</span>,      <span class="cm"># iteraciones (≥3)</span>
+    memory_cost=<span class="nb">65536</span>, <span class="cm"># 64 MB de RAM requeridos</span>
+    parallelism=<span class="nb">4</span>,     <span class="cm"># hilos paralelos</span>
+    hash_len=<span class="nb">32</span>,       <span class="cm"># 256 bits de hash</span>
+    salt_len=<span class="nb">16</span>        <span class="cm"># salt aleatorio automático</span>
+)
+
+<span class="cm"># Hashear (genera salt aleatorio automáticamente)</span>
+<span class="kw">def</span> <span class="fn">hash_password</span>(password: <span class="nb">str</span>) -> <span class="nb">str</span>:
+    <span class="kw">return</span> ph.<span class="fn">hash</span>(password)
+    <span class="cm"># → "$argon2id$v=19$m=65536,t=3,p=4$..."</span>
+
+<span class="cm"># Verificar contraseña</span>
+<span class="kw">def</span> <span class="fn">verify_password</span>(stored_hash: <span class="nb">str</span>, password: <span class="nb">str</span>) -> <span class="nb">bool</span>:
+    <span class="kw">try</span>:
+        ph.<span class="fn">verify</span>(stored_hash, password)
+        <span class="cm"># Re-hashear si los parámetros cambiaron (backward compat)</span>
+        <span class="kw">if</span> ph.<span class="fn">check_needs_rehash</span>(stored_hash):
+            <span class="kw">return</span> <span class="nb">True</span>, <span class="fn">hash_password</span>(password)
+        <span class="kw">return</span> <span class="nb">True</span>, <span class="nb">None</span>
+    <span class="kw">except</span> VerifyMismatchError:
+        <span class="kw">return</span> <span class="nb">False</span>, <span class="nb">None</span>
+
+<span class="cm"># Uso</span>
+hash_stored = <span class="fn">hash_password</span>(<span class="st">"contraseña_usuario"</span>)
+ok, new_hash = <span class="fn">verify_password</span>(hash_stored, <span class="st">"contraseña_usuario"</span>)
+print(ok)  <span class="cm"># True</span>
+
+<span class="cm"># NUNCA hacer esto:</span>
+<span class="cm"># import hashlib; hashlib.sha256(password.encode()).hexdigest()  ← VULNERABLE</span></code></pre>
+          </div>
+
+          <div class="tab-panel" id="codetab-hmacpy" style="padding: 0">
+            <div class="code-label" style="padding: 20px 24px 0">
+              Python — HMAC-SHA256 para autenticación de mensajes
+            </div>
+            <pre><code><span class="kw">import</span> hmac
+<span class="kw">import</span> hashlib
+<span class="kw">import</span> os
+
+<span class="cm"># Generar una clave secreta compartida</span>
+SECRET_KEY = os.<span class="fn">urandom</span>(<span class="nb">32</span>)  <span class="cm"># 256 bits aleatorios</span>
+
+<span class="cm"># Firmar un mensaje</span>
+<span class="kw">def</span> <span class="fn">sign_message</span>(message: <span class="nb">str</span>, key: <span class="nb">bytes</span>) -> <span class="nb">str</span>:
+    <span class="kw">return</span> hmac.<span class="fn">new</span>(
+        key,
+        message.<span class="fn">encode</span>(<span class="st">'utf-8'</span>),
+        hashlib.sha256
+    ).<span class="fn">hexdigest</span>()
+
+<span class="cm"># Verificar en tiempo constante (previene timing attacks)</span>
+<span class="kw">def</span> <span class="fn">verify_message</span>(message: <span class="nb">str</span>, signature: <span class="nb">str</span>, key: <span class="nb">bytes</span>) -> <span class="nb">bool</span>:
+    expected = <span class="fn">sign_message</span>(message, key)
+    <span class="cm"># hmac.compare_digest evita ataques de timing</span>
+    <span class="kw">return</span> hmac.<span class="fn">compare_digest</span>(expected, signature)
+
+<span class="cm"># Ejemplo: autenticar webhook de API</span>
+payload = <span class="st">"user_id=42&action=transfer&amount=100"</span>
+sig = <span class="fn">sign_message</span>(payload, SECRET_KEY)
+
+<span class="cm"># El receptor verifica:</span>
+print(<span class="fn">verify_message</span>(payload, sig, SECRET_KEY))  <span class="cm"># True</span>
+print(<span class="fn">verify_message</span>(<span class="st">"user_id=42&action=transfer&amount=9999"</span>, sig, SECRET_KEY))  <span class="cm"># False</span>
+
+<span class="cm"># NUNCA hacer esto:</span>
+<span class="cm"># H(secret || message)  ← vulnerable a Length Extension Attack</span>
+<span class="cm"># hash_a == hash_b       ← vulnerable a Timing Attack (usar compare_digest)</span></code></pre>
+          </div>
+
+          <div class="tab-panel" id="codetab-blake3py" style="padding: 0">
+            <div class="code-label" style="padding: 20px 24px 0">
+              Python — BLAKE3 para hashing ultrarrápido
+            </div>
+            <pre><code><span class="cm"># pip install blake3</span>
+<span class="kw">import</span> blake3
+
+<span class="cm"># Hash simple — 5-10x más rápido que SHA-256</span>
+<span class="kw">def</span> <span class="fn">hash_string_b3</span>(texto: <span class="nb">str</span>) -> <span class="nb">str</span>:
+    <span class="kw">return</span> blake3.<span class="fn">blake3</span>(texto.<span class="fn">encode</span>()).<span class="fn">hexdigest</span>()
+
+<span class="cm"># Hash de archivo con paralelismo (BLAKE3 es internamente paralelo)</span>
+<span class="kw">def</span> <span class="fn">hash_file_b3</span>(path: <span class="nb">str</span>) -> <span class="nb">str</span>:
+    h = blake3.<span class="fn">blake3</span>()
+    <span class="kw">with</span> <span class="fn">open</span>(path, <span class="st">'rb'</span>) <span class="kw">as</span> f:
+        <span class="kw">for</span> chunk <span class="kw">in</span> <span class="fn">iter</span>(<span class="kw">lambda</span>: f.<span class="fn">read</span>(<span class="nb">1048576</span>), <span class="nb">b''</span>):  <span class="cm"># 1 MB chunks</span>
+            h.<span class="fn">update</span>(chunk)
+    <span class="kw">return</span> h.<span class="fn">hexdigest</span>()
+
+<span class="cm"># BLAKE3 como KDF (derive_key) — recomendado sobre HKDF con SHA-256</span>
+<span class="kw">def</span> <span class="fn">derive_key</span>(context: <span class="nb">str</span>, material: <span class="nb">bytes</span>) -> <span class="nb">bytes</span>:
+    <span class="kw">return</span> blake3.<span class="fn">blake3</span>(
+        material,
+        derive_key_context=context
+    ).<span class="fn">digest</span>(length=<span class="nb">32</span>)
+
+<span class="cm"># Cuándo usar BLAKE3 vs SHA-256:
+# BLAKE3: integridad de archivos, hashing de datos, CDN content-addressed storage
+# SHA-256: cuando necesitas compatibilidad estándar (TLS, firmas X.509, Bitcoin)
+# BLAKE3 NO es adecuado para contraseñas (usar Argon2id)</span>
+
+print(<span class="fn">hash_string_b3</span>(<span class="st">"Hola mundo"</span>))</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ FOOTER ══════════════════ -->
+    <footer>
+      <p>Funciones Hash Criptográficas — Herramienta educativa interactiva</p>
+      <p style="margin-top: 8px; color: #334155">
+        Web Crypto API (SHA-256 nativo) · Sin dependencias externas · Todo el
+        cómputo en el navegador
+      </p>
+    </footer>
+
+    <script>
+      // ══════════════════════════════════════════════
+      // UTILIDADES CRYPTO
+      // ══════════════════════════════════════════════
+
+      async function sha256hex(text) {
+        const buf = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(text),
+        );
+        return Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      async function sha256buf(text) {
+        return new Uint8Array(
+          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
+        );
+      }
+
+      async function hmacSha256(keyStr, msgStr) {
+        const keyMat = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(keyStr),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"],
+        );
+        const sig = await crypto.subtle.sign(
+          "HMAC",
+          keyMat,
+          new TextEncoder().encode(msgStr),
+        );
+        return Array.from(new Uint8Array(sig))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      function hexToBytes(hex) {
+        const bytes = [];
+        for (let i = 0; i < hex.length; i += 2)
+          bytes.push(parseInt(hex.substr(i, 2), 16));
+        return bytes;
+      }
+
+      function bytesToBits(bytes) {
+        const bits = [];
+        for (const b of bytes)
+          for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+        return bits;
+      }
+
+      function randomHex(len) {
+        return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      function switchTab(btn, panelId) {
+        const wrapper = btn.closest(".tabs-wrapper");
+
+        wrapper.querySelectorAll(".tab-panel").forEach((p) => {
+          p.style.display = "none";
+          p.classList.remove("active");
+        });
+        wrapper
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+
+        const panel = document.getElementById(panelId);
+        panel.style.display = "block";
+        panel.classList.add("active");
+        btn.classList.add("active");
+
+        if (panelId === "tab-avalanche") runAvalanche();
+        if (panelId === "tab-speed") animateSpeedBars();
+      }
+
+      // ══════════════════════════════════════════════
+      // CALCULADORA HASH
+      // ══════════════════════════════════════════════
+
+      async function calcHash() {
+        const text = document.getElementById("hash-input").value;
+        document.getElementById("char-count").textContent = text.length;
+        if (!text) {
+          document.getElementById("hash-result-hex").textContent = "—";
+          document.getElementById("hash-result-b64").textContent = "—";
+          return;
+        }
+        const hex = await sha256hex(text);
+        document.getElementById("hash-result-hex").textContent = hex;
+        const buf = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(text),
+        );
+        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        document.getElementById("hash-result-b64").textContent = b64;
+      }
+
+      // ══════════════════════════════════════════════
+      // EFECTO AVALANCHA
+      // ══════════════════════════════════════════════
+
+      let avTimer = null;
+      function runAvalanche() {
+        clearTimeout(avTimer);
+        avTimer = setTimeout(async () => {
+          const t1 = document.getElementById("av-text1").value;
+          const t2 = document.getElementById("av-text2").value;
+          const [h1, h2] = await Promise.all([
+            sha256hex(t1 || ""),
+            sha256hex(t2 || ""),
+          ]);
+          document.getElementById("av-hash1").textContent = h1;
+          document.getElementById("av-hash2").textContent = h2;
+          const bits1 = bytesToBits(hexToBytes(h1));
+          const bits2 = bytesToBits(hexToBytes(h2));
+          let diff = 0;
+          for (let i = 0; i < bits1.length; i++)
+            if (bits1[i] !== bits2[i]) diff++;
+          document.getElementById("av-bits-diff").textContent = diff;
+          document.getElementById("av-pct").textContent =
+            ((diff / 256) * 100).toFixed(1) + "%";
+          drawAvalancheCanvas(bits1, bits2);
+        }, 60);
+      }
+
+      function drawAvalancheCanvas(bits1, bits2) {
+        const canvas = document.getElementById("avalanche-canvas");
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.clientWidth,
+          h = canvas.clientHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(dpr, dpr);
+        ctx.fillStyle = "#0d1117";
+        ctx.fillRect(0, 0, w, h);
+
+        const cols = 32,
+          rows = 8;
+        const cellW = w / cols,
+          cellH = h / rows;
+        const pad = 2;
+
+        for (let i = 0; i < 256; i++) {
+          const col = i % cols,
+            row = Math.floor(i / cols);
+          const same = bits1[i] === bits2[i];
+          ctx.fillStyle = same ? "rgba(59,130,246,0.3)" : "#ef4444";
+          ctx.beginPath();
+          ctx.roundRect(
+            col * cellW + pad,
+            row * cellH + pad,
+            cellW - pad * 2,
+            cellH - pad * 2,
+            3,
+          );
+          ctx.fill();
+        }
+      }
+
+      // ══════════════════════════════════════════════
+      // SALT SIMULATOR
+      // ══════════════════════════════════════════════
+
+      let saltRows = [];
+
+      async function addSalt() {
+        const pwd = document.getElementById("salt-password").value;
+        const salt = randomHex(16);
+        const hash = await sha256hex(salt + pwd);
+        saltRows.push({ salt, hash });
+        renderSalts();
+      }
+
+      function clearSalts() {
+        saltRows = [];
+        renderSalts();
+      }
+
+      function renderSalts() {
+        const el = document.getElementById("salt-results");
+        if (saltRows.length === 0) {
+          el.innerHTML =
+            '<div style="text-align:center;padding:20px;color:var(--text-faint);font-size:13px">Haz clic en "Generar salt aleatorio" para empezar</div>';
+          return;
+        }
+        el.innerHTML = saltRows
+          .map(
+            (r, i) => `
+    <div class="salt-row">
+      <span style="color:var(--text-faint);font-size:12px">#${i + 1}</span>
+      <span class="salt-val">${r.salt}</span>
+      <span class="salt-hash">${r.hash}</span>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ══════════════════════════════════════════════
+      // SPEED BARS
+      // ══════════════════════════════════════════════
+
+      let speedAnimated = false;
+      function animateSpeedBars() {
+        if (speedAnimated) return;
+        speedAnimated = true;
+        setTimeout(() => {
+          document.getElementById("bar-blake3").style.width = "95%";
+          document.getElementById("bar-sha256").style.width = "100%";
+          document.getElementById("bar-bcrypt").style.width = "0.05%";
+          document.getElementById("bar-argon2").style.width = "0.001%";
+          // Correct the bar for bcrypt to be visible
+          setTimeout(() => {
+            document.getElementById("bar-bcrypt").style.width = "1%";
+            document.getElementById("bar-argon2").style.width = "0.1%";
+          }, 400);
+        }, 100);
+      }
+
+      // ══════════════════════════════════════════════
+      // HMAC
+      // ══════════════════════════════════════════════
+
+      let hmacTimer = null;
+      async function calcHMAC() {
+        clearTimeout(hmacTimer);
+        hmacTimer = setTimeout(async () => {
+          const key = document.getElementById("hmac-key").value;
+          const msg = document.getElementById("hmac-msg").value;
+          if (!key || !msg) {
+            document.getElementById("hmac-result").textContent = "—";
+            return;
+          }
+          const result = await hmacSha256(key, msg);
+          document.getElementById("hmac-result").textContent = result;
+        }, 100);
+      }
+
+      // ══════════════════════════════════════════════
+      // INTERSECTION OBSERVER (scroll reveal)
+      // ══════════════════════════════════════════════
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) e.target.classList.add("visible");
+          });
+        },
+        { threshold: 0.08 },
+      );
+
+      document.querySelectorAll("section").forEach((s) => observer.observe(s));
+
+      // ══════════════════════════════════════════════
+      // NAV HIGHLIGHT
+      // ══════════════════════════════════════════════
+
+      const sections = document.querySelectorAll("section[id]");
+      const navLinks = document.querySelectorAll("nav a");
+
+      const navObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              navLinks.forEach((l) => l.classList.remove("active"));
+              const link = document.querySelector(
+                `nav a[href="#${e.target.id}"]`,
+              );
+              if (link) link.classList.add("active");
+            }
+          });
+        },
+        { threshold: 0.4 },
+      );
+
+      sections.forEach((s) => navObserver.observe(s));
+
+      // ══════════════════════════════════════════════
+      // INIT
+      // ══════════════════════════════════════════════
+
+      window.addEventListener("DOMContentLoaded", () => {
+        // Hide all non-active tab panels on load
+        document.querySelectorAll(".tab-panel:not(.active)").forEach((p) => {
+          p.style.display = "none";
+        });
+        document.querySelectorAll(".tab-panel.active").forEach((p) => {
+          p.style.display = "block";
+        });
+
+        calcHash();
+        runAvalanche();
+        calcHMAC();
+      });
+
+      // ── Copy buttons ──
+      document.querySelectorAll("pre").forEach((pre) => {
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copiar";
+        pre.style.position = "relative";
+        pre.appendChild(btn);
+        btn.addEventListener("click", () => {
+          const text = pre.innerText
+            .replace("Copiar\n", "")
+            .replace("\nCopiar", "");
+          navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = "✓ Copiado";
+            setTimeout(() => {
+              btn.textContent = "Copiar";
+            }, 2000);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
