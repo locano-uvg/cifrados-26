@@ -102,20 +102,20 @@ export const presentations = [
     description: "Firmas digitales",
     path: "temas/asimetricos/Firmas/index.html",
     image: "temas/asimetricos/assets/firma1.jpg",
-    active: false,
+    active: true,
   },
   {
     title: "ECC",
     description: "Algoritmo ECC",
     path: "temas/asimetricos/ECC/index.html",
     image: "temas/asimetricos/assets/ecc.png",
-    active: false,
+    active: true,
   },
   {
     title: "Algoritmos Asimétricos",
     description: "Comparación de Algoritmos asimétricos",
     path: "temas/asimetricos/Algoritmos/index.html",
     image: "temas/asimetricos/assets/algoritmos.jpeg",
-    active: false,
+    active: true,
   },
 ];

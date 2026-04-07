@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Firmas Digitales</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- 1. PORTADA -->
+        <section>
+          <h1>Firmas Digitales</h1>
+        </section>
+
+        <!-- 2. QUÉ ES -->
+        <section>
+          <section>
+            <h2>¿Qué es una Firma Digital?</h2>
+          </section>
+          <section>
+            <p>
+              Una firma digital es un mecanismo criptográfico que proporciona
+              <strong>autenticidad, integridad y no repudio.</strong>
+            </p>
+            <p>Basada en criptografía de <strong>clave pública.</strong></p>
+            <p>
+              Utilizada para verificar <strong>la identidad</strong> y
+              asegurar que el contenido <strong>no ha sido alterado.</strong>
+            </p>
+          </section>
+          <section>
+            <h3>Las 3 Garantías de una Firma Digital</h3>
+            <ul>
+              <li>
+                <strong>Autenticidad:</strong> Solo quien tiene la clave privada
+                pudo haber generado esa firma
+              </li>
+              <li>
+                <strong>Integridad:</strong> Cualquier modificación al documento
+                invalida la firma — detectable inmediatamente
+              </li>
+              <li>
+                <strong>No repudio:</strong> El firmante no puede negar haber
+                firmado — base legal de contratos electrónicos
+              </li>
+            </ul>
+            <p style="font-size: 1.1rem">
+              A diferencia de las firmas manuscritas, las firmas digitales
+              son matemáticamente verificables por cualquier persona
+            </p>
+          </section>
+        </section>
+
+        <!-- 3. CÓMO FUNCIONA -->
+        <section>
+          <section>
+            <h2>¿Cómo Funciona?</h2>
+          </section>
+          <section>
+            <h3>Generación de la Firma</h3>
+            <ol>
+              <li>Calcular el hash del mensaje: <strong>h = H(mensaje)</strong></li>
+              <li>
+                Cifrar el hash con la clave privada del firmante:
+                <strong>σ = E(h, k_priv)</strong>
+              </li>
+              <li>Transmitir: mensaje + σ (la firma)</li>
+            </ol>
+            <br />
+            <h3>Verificación de la Firma</h3>
+            <ol>
+              <li>
+                Descifrar la firma con la clave pública:
+                <strong>h' = D(σ, k_pub)</strong>
+              </li>
+              <li>Calcular el hash del mensaje recibido: <strong>h = H(mensaje)</strong></li>
+              <li>Si <strong>h == h'</strong> → firma válida</li>
+            </ol>
+          </section>
+          <section>
+            <img src="../assets/firma1.jpg" alt="Firma Digital" />
+          </section>
+        </section>
+
+        <!-- 4. HASH + FIRMA (movido aquí, fundamental para el mecanismo) -->
+        <section>
+          <section>
+            <h2>El Rol del Hash en la Firma</h2>
+          </section>
+
+          <section>
+            <p>Las funciones hash son esenciales en el proceso de firma:</p>
+            <ul>
+              <li>
+                Permiten firmar documentos de <strong>cualquier tamaño</strong>
+                con una operación de tamaño fijo
+              </li>
+              <li>
+                RSA solo puede firmar datos del tamaño de la clave (~256 bytes para RSA-2048)
+              </li>
+              <li>
+                Hash SHA-256 de 32 bytes → RSA firma esos 32 bytes
+                → válida para un documento de cualquier tamaño
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img
+              src="../assets/hash2.png"
+              alt="Validación de Firma Digital"
+              height="400"
+            />
+            <ul>
+              <li>Generar un nuevo hash a partir del documento recibido</li>
+              <li>
+                Descifrar el hash que el propio documento contiene almacenado.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Hash y Colisiones</h3>
+            <ul>
+              <li>
+                Si dos mensajes producen el mismo hash (colisión), un atacante
+                podría sustituir el documento firmado por otro malicioso
+              </li>
+              <li>
+                <strong>MD5:</strong> colisiones demostradas en 1996;
+                no usar en firmas
+              </li>
+              <li>
+                <strong>SHA-1:</strong> SHAttered attack (Google, 2017) — colisión real producida.
+                No usar en firmas nuevas
+              </li>
+              <li>
+                <strong>SHA-256 / SHA-3 / BLAKE3:</strong> ninguna colisión conocida.
+                Usar estos
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 5. PROPIEDADES (condensadas, sin duplicar lo anterior) -->
+        <section>
+          <section>
+            <h2>Propiedades Adicionales</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Imposibilidad de falsificación:</strong>
+                computacionalmente inviable para un tercero falsificar una firma
+                válida sin conocer la clave privada del firmante
+              </li>
+              <li>
+                <strong>Verificabilidad:</strong>
+                cualquier destinatario puede verificar la firma
+                sin compartir ninguna clave secreta
+              </li>
+              <li>
+                <strong>Independencia del contenido:</strong>
+                la firma se calcula sobre el contenido completo pero no revela
+                ninguna información sobre el mismo
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img
+              src="../assets/firma2.jpg"
+              alt="Propiedades de la Firma Digital"
+              height="400"
+            />
+          </section>
+        </section>
+
+        <!-- 6. ALGORITMOS DE FIRMA DIGITAL -->
+        <section>
+          <section>
+            <h2>Algoritmos de Firma Digital</h2>
+          </section>
+          <section>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Algoritmo</th>
+                <th>Base</th>
+                <th>Seguridad</th>
+                <th>Estado</th>
+              </tr>
+              <tr>
+                <td><strong>RSA-PSS</strong></td>
+                <td>Factorización</td>
+                <td>3072 bits = 128 bits seg.</td>
+                <td>Aceptable</td>
+              </tr>
+              <tr>
+                <td><strong>ECDSA (P-256)</strong></td>
+                <td>ECDLP</td>
+                <td>256 bits = 128 bits seg.</td>
+                <td>Recomendado</td>
+              </tr>
+              <tr>
+                <td><strong>Ed25519 (EdDSA)</strong></td>
+                <td>ECDLP (Curve25519)</td>
+                <td>256 bits = 128 bits seg.</td>
+                <td>Más recomendado</td>
+              </tr>
+              <tr>
+                <td><strong>ML-DSA (Dilithium)</strong></td>
+                <td>Retículos modulares</td>
+                <td>Post-cuántico</td>
+                <td>NIST FIPS 204 (2024)</td>
+              </tr>
+              <tr>
+                <td>RSA-PKCS#1 v1.5</td>
+                <td>Factorización</td>
+                <td>—</td>
+                <td>Solo compatibilidad</td>
+              </tr>
+              <tr>
+                <td>DSA clásico</td>
+                <td>Log. discreto</td>
+                <td>—</td>
+                <td>Obsoleto (NIST)</td>
+              </tr>
+            </table>
+          </section>
+          <section>
+            <h3>¿Por qué Ed25519 es preferido?</h3>
+            <ul>
+              <li>
+                Diseñado para evitar vulnerabilidades comunes de implementación
+              </li>
+              <li>
+                <strong>Nonce determinístico:</strong> k se deriva del mensaje + clave privada.
+                No puede reutilizarse accidentalmente (a diferencia de ECDSA)
+              </li>
+              <li>
+                Operaciones de tiempo constante por diseño — resistente a timing attacks
+              </li>
+              <li>Más rápido que ECDSA y RSA en verificación</li>
+              <li>Adoptado por SSH, TLS 1.3, Signal, Tor, Monero, Cardano</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 7. PKI -->
+        <section>
+          <section>
+            <h2>Infraestructura de Clave Pública (PKI)</h2>
+          </section>
+          <section>
+            <h3>¿Qué es la PKI?</h3>
+            <p>
+              La PKI (Public Key Infrastructure) es el conjunto de roles, políticas,
+              hardware, software y procedimientos para gestionar
+              <strong>certificados digitales y claves públicas</strong>.
+            </p>
+            <ul>
+              <li>
+                Problema: ¿Cómo sé que la clave pública de "banco.com"
+                realmente pertenece al banco y no a un atacante?
+              </li>
+              <li>
+                Solución: Una <strong>Autoridad de Certificación (CA)</strong>
+                firma digitalmente ese vínculo
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Certificados X.509</h3>
+            <p>
+              Un certificado X.509 es un documento digital que vincula
+              una clave pública con una identidad (dominio, persona u organización).
+            </p>
+            <ul>
+              <li>Contiene: clave pública, nombre del sujeto, emisor (CA), validez</li>
+              <li>Está firmado digitalmente por la CA emisora</li>
+              <li>Usado en HTTPS, S/MIME, firma de código, VPN</li>
+            </ul>
+            <pre><code class="bash"># Ver certificado de un sitio web
+openssl s_client -connect google.com:443 -showcerts 2>/dev/null | \
+  openssl x509 -noout -text | head -30
+            </code></pre>
+          </section>
+          <section>
+            <h3>Cadena de Confianza</h3>
+            <ul>
+              <li>
+                <strong>Root CA:</strong> Autoridad raíz. Su certificado viene
+                preinstalado en SO y navegadores. Autofirmado. Ej: DigiCert Root, ISRG Root X1
+              </li>
+              <li>
+                <strong>Intermediate CA:</strong> Firmada por la Root CA.
+                Emite certificados de entidades finales.
+                Las Root CAs no firman directamente para limitar exposición
+              </li>
+              <li>
+                <strong>End-Entity cert:</strong> Certificado del servidor/usuario.
+                Firmado por la Intermediate CA
+              </li>
+            </ul>
+            <p>
+              Root CA → Intermediate CA → certificado.com
+            </p>
+          </section>
+          <section>
+            <h3>Validación de la Cadena</h3>
+            <ol>
+              <li>Verificar que la firma del cert del servidor es válida (firmado por Intermediate CA)</li>
+              <li>Verificar que la firma de la Intermediate CA es válida (firmado por Root CA)</li>
+              <li>Verificar que la Root CA está en la lista de confianza del SO/navegador</li>
+              <li>Verificar que ningún certificado ha expirado</li>
+              <li>Verificar que ningún certificado está revocado (CRL/OCSP)</li>
+              <li>Verificar que el nombre del dominio coincide con el cert (CN o SAN)</li>
+            </ol>
+          </section>
+          <section>
+            <h3>Revocación: CRL y OCSP</h3>
+            <ul>
+              <li>
+                <strong>CRL (Certificate Revocation List):</strong>
+                Lista de certificados revocados publicada por la CA.
+                Descargada periódicamente — puede estar desactualizada
+              </li>
+              <li>
+                <strong>OCSP (Online Certificate Status Protocol):</strong>
+                Consulta en tiempo real al servidor de la CA si el certificado
+                está vigente. Más actualizado que CRL
+              </li>
+              <li>
+                <strong>OCSP Stapling:</strong> El servidor incluye la respuesta
+                OCSP firmada en el handshake TLS — evita la consulta del cliente
+                y mejora performance y privacidad
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 8. IMPLEMENTACIÓN -->
+        <section>
+          <section>
+            <h2>Implementación</h2>
+          </section>
+          <section>
+            <h3>Firmas RSA-PSS (Python)</h3>
+            <pre><code class="python">from Crypto.PublicKey import RSA
+from Crypto.Signature import pss
+from Crypto.Hash import SHA256
+
+# Generación de clave RSA
+key = RSA.generate(3072)
+private_key = key.export_key()
+public_key = key.publickey().export_key()
+
+# Mensaje y firma RSA-PSS
+mensaje = b"Hola, este es un mensaje firmado."
+hash_mensaje = SHA256.new(mensaje)
+firma = pss.new(key).sign(hash_mensaje)
+print("Firma RSA-PSS generada:", firma.hex()[:32], "...")
+            </code></pre>
+          </section>
+          <section>
+            <h3>Verificación RSA-PSS</h3>
+            <pre><code class="python"># Verificación de firma RSA-PSS
+public = RSA.import_key(public_key)
+hash_verificacion = SHA256.new(mensaje)
+verifier = pss.new(public)
+try:
+    verifier.verify(hash_verificacion, firma)
+    print("Firma VÁLIDA: mensaje auténtico e íntegro")
+except (ValueError, TypeError) as e:
+    print("Firma INVÁLIDA:", e)
+            </code></pre>
+          </section>
+          <section>
+            <h3>Firmas Ed25519 (Python) — Recomendado</h3>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PublicFormat, PrivateFormat, NoEncryption
+)
+
+# Generar par de claves
+private_key = Ed25519PrivateKey.generate()
+public_key = private_key.public_key()
+
+# Firmar
+mensaje = b"Documento legal"
+firma = private_key.sign(mensaje)  # nonce determinístico, tiempo constante
+print("Firma Ed25519 (64 bytes):", firma.hex())
+
+# Verificar
+try:
+    public_key.verify(firma, mensaje)
+    print("Firma VÁLIDA")
+except Exception:
+    print("Firma INVÁLIDA")
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- 9. JWT (movido aquí, como aplicación concreta antes de los fallos) -->
+        <section>
+          <section>
+            <h2>JWT y Firmas Digitales</h2>
+          </section>
+          <section>
+            <p>
+              JWT (JSON Web Token) es un estándar abierto (RFC 7519) que define
+              un formato compacto y autocontenido para la transmisión segura de
+              información entre partes como un objeto JSON.
+            </p>
+            <ul>
+              <li>
+                La firma se genera con HMAC o algoritmos de clave pública (RSA,
+                ECDSA, EdDSA).
+              </li>
+              <li>
+                Garantiza autenticidad e integridad del token — no confidencialidad.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img
+              src="../assets/firma4.png"
+              alt="JWT y Firmas Digitales"
+              height="500"
+            />
+          </section>
+          <section>
+            <h2>Partes del JWT</h2>
+          </section>
+          <section>
+            <strong>Header:</strong>
+            <img
+              src="../assets/firma5.png"
+              alt="JWT Header"
+              height="400"
+            />
+            <p>
+              Contiene <strong>tipo de token</strong> y
+              <strong>algoritmo de firma</strong> como RS256, ES256, EdDSA
+            </p>
+          </section>
+          <section>
+            <strong>Payload:</strong>
+            <img
+              src="../assets/firma6.png"
+              alt="JWT Payload"
+              height="400"
+            />
+            <p>Contiene claims: sub (sujeto), iat (emitido), exp (expira), roles, etc.</p>
+          </section>
+          <section>
+            <strong>Signature:</strong>
+            <br />
+            <img
+              src="../assets/firma7.png"
+              alt="JWT Signature"
+              height="200"
+            />
+            <ul>
+              <li>
+                La firma es el contenido del encabezado codificado, el payload
+                codificado, y/o una llave secreta.
+              </li>
+              <li>
+                El algoritmo especificado en el encabezado se utiliza y se
+                firma.
+              </li>
+              <li>
+                La firma se utiliza para verificar que el mensaje no se
+                modificó.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Errores Críticos en JWT</h3>
+            <ul>
+              <li>
+                <strong>Algoritmo "none":</strong> Algunos frameworks aceptan
+                el algoritmo "none" — sin firma, cualquiera puede forjar tokens.
+                Siempre validar el algoritmo
+              </li>
+              <li>
+                <strong>Confusión RS256 vs HS256:</strong> Si el servidor acepta ambos,
+                un atacante puede usar la clave pública RSA como secreto HMAC
+                para forjar tokens válidos
+              </li>
+              <li>
+                <strong>Sin validar exp / nbf:</strong> Tokens expirados aceptados
+                indefinidamente
+              </li>
+              <li>
+                <strong>Secreto HMAC débil:</strong> Claves cortas o predecibles
+                en JWT con HS256 son crackeables offline
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- 10. FALLOS REALES -->
+        <section>
+          <section>
+            <h2>Fallos Reales de Firmas Digitales</h2>
+          </section>
+          <section>
+            <h3>DigiNotar (2011) — Colapso de una CA</h3>
+            <ul>
+              <li>
+                La CA holandesa DigiNotar fue comprometida por atacantes iraníes
+              </li>
+              <li>
+                Se emitieron certs fraudulentos para google.com, cia.gov,
+                microsoft.com, *.skype.com y otros ~500 dominios
+              </li>
+              <li>
+                Atacantes realizaron MITM sobre 300,000 usuarios en Irán —
+                interceptando tráfico HTTPS cifrado
+              </li>
+              <li>
+                Consecuencia: DigiNotar declaró bancarrota en semanas.
+                Todos sus certificados fueron revocados globalmente
+              </li>
+              <li>
+                <strong>Lección:</strong> La seguridad de la CA es tan crítica
+                como la del propio algoritmo
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Sony PlayStation 3 (2010) — Nonce Reutilizado</h3>
+            <ul>
+              <li>
+                Sony firmaba todo el software de PS3 con ECDSA usando
+                un valor <strong>k constante</strong> en todas las firmas
+              </li>
+              <li>
+                El grupo fail0verflow y George Hotz extrajeron la clave
+                privada de Sony con algebra simple
+              </li>
+              <li>
+                Cualquiera podía firmar software "oficial" para la consola
+              </li>
+              <li>
+                <strong>Lección:</strong> El nonce k en ECDSA/DSA DEBE ser
+                único y criptográficamente aleatorio, o usar Ed25519
+                (nonce determinístico por diseño)
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Flame Malware (2012) — MD5 Colisión en Certificados</h3>
+            <ul>
+              <li>
+                Malware de espionaje estatal firmado con un certificado
+                Microsoft fraudulento
+              </li>
+              <li>
+                Explotó una colisión MD5 en certificados de Windows Update
+                para aparecer como software oficial de Microsoft
+              </li>
+              <li>
+                Afectó sistemas en Irán, Israel, Líbano y otros países
+              </li>
+              <li>
+                <strong>Lección:</strong> MD5 no debe usarse en ninguna
+                aplicación de seguridad — ni siquiera legacy
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Ataques MITM sin Validación de Certificados</h3>
+            <p>
+              Error frecuente en implementaciones de clientes HTTPS/TLS:
+              deshabilitar la validación del certificado del servidor.
+            </p>
+            <pre><code class="python"># Incorrecto: desactiva validación — MITM transparente para el atacante
+import requests
+requests.get("https://banco.com", verify=False)
+
+# Correcto: validar siempre (comportamiento por defecto)
+requests.get("https://banco.com")
+
+# Con certificate pinning (apps móviles, APIs críticas)
+requests.get("https://api.banco.com", verify="banco_cert.pem")
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- 11. ERRORES COMUNES -->
+        <section>
+          <section>
+            <h2>Errores Comunes en Firmas Digitales</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Firmar sin hash:</strong> RSA textbook firma M directamente —
+                malleable y susceptible a ataques de forge selectivo
+              </li>
+              <li>
+                <strong>Usar SHA-1 o MD5:</strong> Colisiones conocidas.
+                Un atacante puede crear dos documentos distintos con el mismo hash
+              </li>
+              <li>
+                <strong>No verificar la firma antes de procesar:</strong>
+                Procesar el mensaje antes de verificar su autenticidad
+              </li>
+              <li>
+                <strong>Clave privada compartida:</strong>
+                Si múltiples sistemas comparten la misma clave privada,
+                comprometer uno compromete todos
+              </li>
+              <li>
+                <strong>Expiración sin revocación:</strong>
+                Certificados vencidos usados por clientes que no verifican expiración
+              </li>
+            </ul>
+          </section>
+        </section>
+
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>

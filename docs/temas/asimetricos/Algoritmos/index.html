@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comparación de Algoritmos Asimétricos</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h1>Comparación de Algoritmos</h1>
+          <p>Criptografía de Clave Pública</p>
+        </section>
+
+        <section>
+          <h3>Panorama General</h3>
+          <table style="width: 100%; font-size: 1.2rem">
+            <tr>
+              <th>Algoritmo</th>
+              <th>Tipo</th>
+              <th>Seguridad Basada en</th>
+              <th>Uso Principal</th>
+            </tr>
+            <tr>
+              <td><strong>RSA</strong></td>
+              <td>Cifrado + Firmas</td>
+              <td>Factorización de enteros</td>
+              <td>PKI, TLS (certs), cifrado de claves</td>
+            </tr>
+            <tr>
+              <td><strong>DH / ECDH</strong></td>
+              <td>Intercambio de claves</td>
+              <td>Logaritmo discreto / ECDLP</td>
+              <td>TLS, PFS, Signal, IPsec</td>
+            </tr>
+            <tr>
+              <td><strong>ElGamal / DSA</strong></td>
+              <td>Cifrado + Firmas</td>
+              <td>Logaritmo discreto</td>
+              <td>GPG legacy, firma de software</td>
+            </tr>
+            <tr>
+              <td><strong>ECDSA / EdDSA</strong></td>
+              <td>Firmas digitales</td>
+              <td>ECDLP (curvas elípticas)</td>
+              <td>Blockchain, SSH, TLS, code signing</td>
+            </tr>
+            <tr>
+              <td><strong>ML-KEM / ML-DSA</strong></td>
+              <td>Intercambio + Firmas</td>
+              <td>Redes de retículos (lattices)</td>
+              <td>Post-cuántico — NIST 2024</td>
+            </tr>
+          </table>
+        </section>
+
+        <section>
+          <section>
+            <h2>Niveles de Seguridad (bits)</h2>
+          </section>
+          <section>
+            <p>
+              Un "bit de seguridad" representa cuánto esfuerzo computacional se
+              necesita para romper el sistema (2^n operaciones).
+            </p>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Seg. (bits)</th>
+                <th>RSA / DH clásico</th>
+                <th>ECC</th>
+                <th>Simétrico</th>
+                <th>Estado</th>
+              </tr>
+              <tr>
+                <td>80 bits</td>
+                <td>RSA-1024</td>
+                <td>160 bits</td>
+                <td>2-TDEA</td>
+                <td>Obsoleto</td>
+              </tr>
+              <tr>
+                <td>112 bits</td>
+                <td>RSA-2048</td>
+                <td>224 bits</td>
+                <td>3-TDEA</td>
+                <td>Mínimo aceptable</td>
+              </tr>
+              <tr>
+                <td>128 bits</td>
+                <td>RSA-3072</td>
+                <td>256 bits</td>
+                <td>AES-128</td>
+                <td>Recomendado</td>
+              </tr>
+              <tr>
+                <td>192 bits</td>
+                <td>RSA-7680</td>
+                <td>384 bits</td>
+                <td>AES-192</td>
+                <td>Alta seguridad</td>
+              </tr>
+              <tr>
+                <td>256 bits</td>
+                <td>RSA-15360</td>
+                <td>521 bits</td>
+                <td>AES-256</td>
+                <td>Muy larga duración</td>
+              </tr>
+            </table>
+            <p style="font-size: 1rem">Fuente: NIST SP 800-57 Part 1 Rev. 5</p>
+          </section>
+          <section>
+            <h3>Conclusión de la tabla</h3>
+            <ul>
+              <li>ECC-256 ≈ RSA-3072 en seguridad, pero ECC es mucho más eficiente</li>
+              <li>RSA-1024 es inseguro — factorizado en 2010</li>
+              <li>Para nuevos sistemas: <strong>mínimo 128 bits de seguridad</strong></li>
+              <li>Para datos que deben durar > 10 años: considerar 192 bits</li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Diffie-Hellman (DH)</h2>
+          </section>
+          <section>
+            <p>
+              Primer protocolo de intercambio de claves sobre canal inseguro (1976).
+              Permite establecer un secreto compartido sin haberlo compartido antes.
+            </p>
+            <p>
+              <strong>Principio:</strong> g<sup>ab</sup> mod p es el secreto compartido,
+              calculado independientemente por ambas partes.
+            </p>
+            <ul>
+              <li>Alice envía: A = g<sup>a</sup> mod p</li>
+              <li>Bob envía: B = g<sup>b</sup> mod p</li>
+              <li>Secreto: S = B<sup>a</sup> = A<sup>b</sup> = g<sup>ab</sup> mod p</li>
+            </ul>
+          </section>
+          <section>
+            <h3>DH Estático vs DHE (Efímero)</h3>
+            <ul>
+              <li>
+                <strong>DH Estático:</strong> Siempre las mismas claves —
+                sin Perfect Forward Secrecy (PFS).
+                Comprometer la clave privada expone <em>todas las sesiones pasadas</em>
+              </li>
+              <li>
+                <strong>DHE:</strong> Nuevas claves efímeras por sesión — con PFS.
+                Comprometer la clave privada de hoy no afecta sesiones de ayer
+              </li>
+            </ul>
+            <p>
+              <strong>TLS 1.3 eliminó completamente el DH estático.</strong>
+              Solo permite DHE o ECDHE.
+            </p>
+          </section>
+          <section>
+            <h3>Ataque Logjam (2015)</h3>
+            <ul>
+              <li>
+                Grupos DH de 512 bits podían romperse en tiempo real por un atacante activo
+              </li>
+              <li>Grupos de 768 y 1024 bits eran vulnerables con precomputación</li>
+              <li>Afectó TLS, SSH, IKE/IPsec — millones de servidores</li>
+              <li>
+                Los atacantes podían degradar conexiones a grupos débiles (downgrade attack)
+              </li>
+            </ul>
+            <p>
+              <strong>Solución:</strong> Usar grupos DH de 2048+ bits
+              o preferir ECDHE (X25519)
+            </p>
+          </section>
+          <section>
+            <h3>Problemas de DH clásico</h3>
+            <ul>
+              <li>Sin autenticación integrada — vulnerable a MITM sin autenticación adicional</li>
+              <li>Grupos débiles o mal configurados son explotables</li>
+              <li>Parámetros globales compartidos reducen seguridad por precomputación</li>
+            </ul>
+            <p>
+              Por eso en la práctica se usa <strong>ECDHE</strong> con curvas
+              modernas (X25519) — más rápido, más seguro, sin grupos compartidos débiles.
+            </p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>ElGamal y DSA</h2>
+          </section>
+          <section>
+            <p>
+              Sistema de cifrado asimétrico y firmas digitales (1985) basado en
+              el problema del logaritmo discreto. DSA es la variante de firma estandarizada por NIST.
+            </p>
+            <ul>
+              <li>Seguro bajo la hipótesis del logaritmo discreto</li>
+              <li>Probabilístico: el mismo mensaje produce cifrados diferentes</li>
+              <li>El texto cifrado es el <strong>doble del tamaño</strong> del mensaje</li>
+              <li>Más lento que RSA y ECC en la práctica</li>
+              <li>DSA vulnerable si se reutiliza o predice el nonce k</li>
+            </ul>
+          </section>
+          <section>
+            <h3>El Problema del Nonce en DSA / ECDSA</h3>
+            <p>
+              DSA/ECDSA usa un número aleatorio <strong>k</strong> para cada firma.
+              Si k se reutiliza en dos firmas (r₁, s₁) y (r₂, s₂) del mismo mensaje hash:
+            </p>
+            <pre><code class="python"># k es el mismo en dos firmas => r1 == r2
+# s1 = (h1 + x*r) / k  mod q
+# s2 = (h2 + x*r) / k  mod q
+# k = (h1 - h2) / (s1 - s2)  mod q  [recuperable]
+# x = (s1*k - h1) / r  mod q  [clave privada expuesta]
+            </code></pre>
+            <p>
+              <strong>Caso real:</strong> Sony PlayStation 3 (2010) — usaban k constante
+              en todas las firmas. Todos los binarios del sistema firmados con la misma k.
+              Clave privada de Sony expuesta completamente.
+            </p>
+          </section>
+          <section>
+            <h3>Solución: Nonce Determinístico (RFC 6979)</h3>
+            <p>
+              En lugar de k aleatorio (que puede fallar), usar k derivado
+              determinísticamente del mensaje + clave privada:
+            </p>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+
+# Ed25519 usa nonce determinístico por diseño — inmune a este ataque
+private_key = ec.generate_private_key(ec.SECP256K1())
+signature = private_key.sign(b"mensaje", ec.ECDSA(hashes.SHA256()))
+# Python cryptography usa RFC 6979 automáticamente para ECDSA
+            </code></pre>
+            <p>
+              <strong>Preferir Ed25519</strong> que es inmune a este problema por diseño.
+            </p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>ECDH — Diffie-Hellman en Curvas Elípticas</h2>
+          </section>
+          <section>
+            <p>
+              Versión de DH sobre curvas elípticas. La operación análoga a
+              la exponenciación modular es la <strong>multiplicación escalar de puntos</strong>.
+            </p>
+            <ul>
+              <li>Alice genera k_A, calcula Q_A = k_A × G (G = punto base de la curva)</li>
+              <li>Bob genera k_B, calcula Q_B = k_B × G</li>
+              <li>Intercambian Q_A y Q_B sobre el canal inseguro</li>
+              <li>Secreto compartido: S = k_A × Q_B = k_B × Q_A = k_A × k_B × G</li>
+            </ul>
+            <p>
+              La seguridad se basa en el <strong>ECDLP (Elliptic Curve Discrete Log Problem)</strong>:
+              dado G y Q = k×G, encontrar k es computacionalmente inviable.
+            </p>
+          </section>
+          <section>
+            <h3>ECDH en Código (X25519)</h3>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+
+# Alice genera su par de claves
+alice_private = X25519PrivateKey.generate()
+alice_public = alice_private.public_key()
+
+# Bob genera su par de claves
+bob_private = X25519PrivateKey.generate()
+bob_public = bob_private.public_key()
+
+# Intercambian claves públicas (canal inseguro)
+# Calculan el secreto compartido
+alice_shared = alice_private.exchange(bob_public)
+bob_shared = bob_private.exchange(alice_public)
+
+assert alice_shared == bob_shared  # Mismo secreto sin haberlo compartido
+print("Secreto compartido:", alice_shared.hex())
+            </code></pre>
+            <p>X25519 es ECDH sobre Curve25519 — el más recomendado actualmente.</p>
+          </section>
+          <section>
+            <h3>Ventajas de ECDH sobre DH clásico</h3>
+            <table style="font-size: 1.3rem">
+              <tr>
+                <th>Aspecto</th>
+                <th>DH Clásico</th>
+                <th>ECDH (X25519)</th>
+              </tr>
+              <tr>
+                <td>Tamaño de clave</td>
+                <td>2048 bits</td>
+                <td>256 bits</td>
+              </tr>
+              <tr>
+                <td>Velocidad</td>
+                <td>Lento</td>
+                <td>~10x más rápido</td>
+              </tr>
+              <tr>
+                <td>Tamaño de mensaje</td>
+                <td>Grande</td>
+                <td>Compacto</td>
+              </tr>
+              <tr>
+                <td>Ataques de subgrupo</td>
+                <td>Posibles</td>
+                <td>Mitigados (cofactor)</td>
+              </tr>
+            </table>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>ECC — Curvas Elípticas</h2>
+          </section>
+          <section>
+            <p>Ofrece mayor seguridad con claves más cortas y mejor rendimiento.</p>
+            <ul>
+              <li>Claves más cortas: ECC-256 ≈ RSA-3072</li>
+              <li>Más eficiente: ideal para IoT, móviles, embedded</li>
+              <li>TLS 1.3 lo prefiere sobre RSA para intercambio de claves</li>
+              <li>Matemáticamente más complejo de implementar correctamente</li>
+              <li>Algunas curvas antiguas tienen parámetros cuestionables (Dual_EC_DRBG — backdoor NSA confirmado)</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Curvas Recomendadas (SafeCurves)</h3>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Curva</th>
+                <th>Seguridad</th>
+                <th>Uso</th>
+                <th>Estado</th>
+              </tr>
+              <tr>
+                <td><strong>Curve25519</strong></td>
+                <td>128 bits</td>
+                <td>ECDH (X25519)</td>
+                <td>Recomendado</td>
+              </tr>
+              <tr>
+                <td><strong>Ed25519</strong></td>
+                <td>128 bits</td>
+                <td>EdDSA (firmas)</td>
+                <td>Recomendado</td>
+              </tr>
+              <tr>
+                <td>P-256 (secp256r1)</td>
+                <td>128 bits</td>
+                <td>ECDSA, ECDH TLS</td>
+                <td>Aceptable</td>
+              </tr>
+              <tr>
+                <td>secp256k1</td>
+                <td>128 bits</td>
+                <td>Bitcoin, Ethereum</td>
+                <td>Uso específico</td>
+              </tr>
+              <tr>
+                <td>P-521</td>
+                <td>260 bits</td>
+                <td>Alta seguridad</td>
+                <td>Aceptable</td>
+              </tr>
+            </table>
+            <p style="font-size: 1rem">
+              safecurves.cr.yp.to evalúa criterios de seguridad e implementación de curvas
+            </p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Post-Quantum Cryptography (PQC)</h2>
+          </section>
+          <section>
+            <h3>La Amenaza Cuántica</h3>
+            <ul>
+              <li>
+                El <strong>algoritmo de Shor</strong> (1994) puede romper RSA y ECC
+                en tiempo polinomial con una QC suficientemente grande
+              </li>
+              <li>
+                RSA-2048 requeriría ~4,000 qubits lógicos para ser roto.
+                Actualmente (2026) las QC más avanzadas tienen cientos de qubits
+                con alta tasa de error — aún no criptoanalíticamente relevantes
+              </li>
+              <li>
+                <strong>"Harvest now, decrypt later":</strong> adversarios ya
+                capturan tráfico cifrado hoy para descifrarlo cuando la QC esté disponible.
+                Los datos confidenciales de hoy ya están en riesgo
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Estándares NIST PQC (Agosto 2024)</h3>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Estándar</th>
+                <th>Algoritmo base</th>
+                <th>Tipo</th>
+                <th>Problema duro</th>
+              </tr>
+              <tr>
+                <td>FIPS 203</td>
+                <td>ML-KEM (Kyber)</td>
+                <td>KEM / Intercambio de claves</td>
+                <td>Module-LWE (retículos)</td>
+              </tr>
+              <tr>
+                <td>FIPS 204</td>
+                <td>ML-DSA (Dilithium)</td>
+                <td>Firmas digitales</td>
+                <td>Module-LWE + SIS (retículos)</td>
+              </tr>
+              <tr>
+                <td>FIPS 205</td>
+                <td>SLH-DSA (SPHINCS+)</td>
+                <td>Firmas digitales</td>
+                <td>Seguridad solo en hash</td>
+              </tr>
+            </table>
+            <p style="font-size: 1rem">
+              FALCON (FN-DSA, FIPS 206) también fue estandarizado — firmas más compactas
+            </p>
+          </section>
+          <section>
+            <h3>Criptografía Híbrida Post-Cuántica</h3>
+            <p>
+              Estrategia recomendada: combinar algoritmo clásico + PQC en paralelo.
+              Si uno falla, el otro protege.
+            </p>
+            <ul>
+              <li>
+                <strong>X25519 + ML-KEM-768:</strong> ya implementado en Chrome,
+                Firefox, Cloudflare desde 2023-2024 para TLS
+              </li>
+              <li>
+                Si la QC rompe ML-KEM → X25519 mantiene seguridad clásica
+              </li>
+              <li>
+                Si un ataque clásico surge → ML-KEM mantiene seguridad cuántica
+              </li>
+              <li>
+                NIST recomienda migrar sistemas críticos antes de 2030
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>¿Qué Algoritmo Usar?</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>TLS/HTTPS moderno:</strong> ECDHE (X25519) + AESGCM.
+                Usar TLS 1.3 — obligatorio en nuevos sistemas
+              </li>
+              <li>
+                <strong>Firmas en Blockchain:</strong> secp256k1 con ECDSA (Bitcoin/Ethereum);
+                Ed25519 para cadenas modernas (Solana, Cardano)
+              </li>
+              <li>
+                <strong>SSH:</strong> Ed25519 — más seguro y rápido que RSA-4096.
+                Generar con <code>ssh-keygen -t ed25519</code>
+              </li>
+              <li>
+                <strong>IoT / Embedded:</strong> ECC (Ed25519, X25519) por restricciones de recursos
+              </li>
+              <li>
+                <strong>Correo seguro (GPG):</strong> ECC ed25519 + cv25519 sobre RSA legacy
+              </li>
+              <li>
+                <strong>Largo plazo (> 2030):</strong> ML-KEM (FIPS 203) + ML-DSA (FIPS 204)
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h2>Regla Fundamental</h2>
+          <blockquote style="font-size: 1.5rem">
+            "Don't roll your own crypto."
+          </blockquote>
+          <p>
+            Los errores de implementación son la causa más común de vulnerabilidades
+            criptográficas — no las fallas matemáticas del algoritmo.
+          </p>
+          <ul>
+            <li><strong>Python:</strong> cryptography, PyNaCl (libsodium)</li>
+            <li><strong>JavaScript/Node:</strong> WebCrypto API, Noble Cryptography</li>
+            <li><strong>Go:</strong> golang.org/x/crypto</li>
+            <li><strong>C/C++:</strong> libsodium, OpenSSL 3.x</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>

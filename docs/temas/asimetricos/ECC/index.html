@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Criptografía de Curvas Elípticas (ECC)</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+    />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h2>Criptografía de Curvas Elípticas</h2>
+          <p>(ECC — Elliptic Curve Cryptography)</p>
+        </section>
+
+        <section>
+          <section>
+            <h2>¿Qué es ECC?</h2>
+          </section>
+          <section>
+            <p>
+              ECC es un sistema criptográfico basado en las matemáticas de
+              <strong>curvas elípticas sobre campos finitos</strong>.
+            </p>
+            <ul>
+              <li>
+                Proporciona el mismo nivel de seguridad que RSA con claves
+                <strong>mucho más cortas</strong>
+              </li>
+              <li>
+                Más eficiente en términos de almacenamiento, cómputo y ancho de banda
+              </li>
+              <li>
+                Soporta: cifrado (ECIES), firmas (ECDSA, EdDSA) e intercambio de claves (ECDH)
+              </li>
+              <li>
+                Propuesto independientemente por Neal Koblitz y Victor Miller en <strong>1985</strong>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Fundamento Matemático</h2>
+          </section>
+          <section>
+            <h3>¿Qué es una Curva Elíptica?</h3>
+            <p>Una curva elíptica es el conjunto de puntos (x, y) que satisfacen:</p>
+            <p><strong>y² = x³ + ax + b</strong> (sobre un campo)</p>
+            <p>Con la condición que el discriminante 4a³ + 27b² ≠ 0 (sin cúspides ni self-intersections)</p>
+            <ul>
+              <li>
+                En criptografía, se trabaja sobre <strong>campos finitos Fp</strong>
+                (aritmética modular): y² ≡ x³ + ax + b (mod p)
+              </li>
+              <li>Los puntos forman un grupo abeliano bajo una operación de suma definida geométricamente</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Operaciones en la Curva</h3>
+            <ul>
+              <li>
+                <strong>Suma de puntos (P + Q):</strong> Se traza una línea entre P y Q,
+                se busca la intersección con la curva y se refleja sobre el eje x
+              </li>
+              <li>
+                <strong>Doblado de punto (2P = P + P):</strong>
+                Se usa la tangente en P
+              </li>
+              <li>
+                <strong>Multiplicación escalar (k × P):</strong>
+                Suma repetida k veces. Ej: 5P = P + P + P + P + P.
+                Se calcula eficientemente con "double-and-add"
+              </li>
+              <li>
+                <strong>Punto en el infinito (O):</strong>
+                Elemento neutro del grupo. P + O = P
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>El Problema del Logaritmo Discreto en Curvas Elípticas (ECDLP)</h3>
+            <p>
+              Dado un punto base G y un punto público Q = k × G,
+              encontrar el escalar <strong>k</strong> es computacionalmente inviable.
+            </p>
+            <ul>
+              <li>
+                <strong>Fácil:</strong> k × G (multiplicación escalar, eficiente con double-and-add)
+              </li>
+              <li>
+                <strong>Difícil:</strong> dado G y Q, encontrar k (ECDLP)
+              </li>
+              <li>
+                El mejor algoritmo conocido para ECDLP es Baby-step Giant-step: O(√p)
+                — mucho más difícil que factorización para el mismo tamaño de clave
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Curva secp256k1 — Bitcoin</h3>
+            <p>La curva que usa Bitcoin: y² = x³ + 7 (mod p)</p>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric import ec
+
+# La curva secp256k1 de Bitcoin
+# a=0, b=7, campo primo p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
+
+# Generar clave privada (escalar k aleatorio)
+private_key = ec.generate_private_key(ec.SECP256K1())
+public_key = private_key.public_key()
+
+# La clave pública es el punto Q = k * G en la curva
+print("Clave privada:", private_key.private_numbers().private_value)
+pub_numbers = public_key.public_numbers()
+print("Clave pública (x,y):", pub_numbers.x, pub_numbers.y)
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>ECDH — Intercambio de Claves</h2>
+          </section>
+          <section>
+            <p>
+              Diffie-Hellman sobre curvas elípticas. El secreto compartido
+              es el <strong>resultado de la multiplicación cruzada</strong>
+              de claves privadas y públicas.
+            </p>
+            <ul>
+              <li>Alice: clave privada a → pública Q_A = a × G</li>
+              <li>Bob: clave privada b → pública Q_B = b × G</li>
+              <li>Alice calcula: S = a × Q_B = a × b × G</li>
+              <li>Bob calcula: S = b × Q_A = b × a × G</li>
+              <li>
+                Ambos obtienen el mismo punto S — sin haberlo compartido.
+                El atacante solo ve G, Q_A y Q_B — no puede calcular S (ECDLP)
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>ECDH con X25519 (Recomendado)</h3>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PublicFormat
+)
+
+# Alice genera su par
+alice_private = X25519PrivateKey.generate()
+alice_public_bytes = alice_private.public_key().public_bytes(
+    Encoding.Raw, PublicFormat.Raw
+)
+
+# Bob genera su par
+bob_private = X25519PrivateKey.generate()
+bob_public_bytes = bob_private.public_key().public_bytes(
+    Encoding.Raw, PublicFormat.Raw
+)
+
+# Intercambian claves públicas (canal inseguro)
+# Calculan el secreto compartido
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
+alice_shared = alice_private.exchange(
+    X25519PublicKey.from_public_bytes(bob_public_bytes)
+)
+bob_shared = bob_private.exchange(
+    X25519PublicKey.from_public_bytes(alice_public_bytes)
+)
+
+assert alice_shared == bob_shared
+print("Secreto compartido:", alice_shared.hex())
+            </code></pre>
+          </section>
+          <section>
+            <h3>Derivación de Clave desde ECDH</h3>
+            <p>
+              El secreto compartido S NO se usa directamente como clave — puede
+              tener bias o estructura. Se pasa por una función de derivación (KDF):
+            </p>
+            <pre><code class="python">import hashlib, hmac
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
+
+# Derivar clave AES-256 del secreto compartido ECDH
+shared_secret = alice_shared
+
+hkdf = HKDF(
+    algorithm=hashes.SHA256(),
+    length=32,  # AES-256
+    salt=None,
+    info=b"handshake data v1"
+)
+clave_aes = hkdf.derive(shared_secret)
+print("Clave AES-256:", clave_aes.hex())
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>ECDSA — Firmas Digitales</h2>
+          </section>
+          <section>
+            <h3>¿Cómo Funciona ECDSA?</h3>
+            <p><strong>Firma (usando clave privada d):</strong></p>
+            <ol>
+              <li>Calcular hash del mensaje: e = H(mensaje)</li>
+              <li>Generar nonce aleatorio k (crítico: debe ser único por firma)</li>
+              <li>Calcular punto R = k × G → tomar r = R.x mod n</li>
+              <li>Calcular s = k⁻¹(e + r × d) mod n</li>
+              <li>Firma = (r, s)</li>
+            </ol>
+            <p><strong>Verificación (usando clave pública Q):</strong></p>
+            <ol>
+              <li>u₁ = e × s⁻¹ mod n, u₂ = r × s⁻¹ mod n</li>
+              <li>Punto V = u₁ × G + u₂ × Q</li>
+              <li>Válido si V.x mod n == r</li>
+            </ol>
+          </section>
+          <section>
+            <h3>ECDSA en Código (Python)</h3>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+
+# Generar par de claves (P-256 para interoperabilidad)
+private_key = ec.generate_private_key(ec.SECP256R1())
+public_key = private_key.public_key()
+
+# Firmar (la librería aplica SHA-256 + ECDSA internamente)
+mensaje = b"Transaccion: Alice -> Bob: 0.5 BTC"
+firma = private_key.sign(mensaje, ec.ECDSA(hashes.SHA256()))
+print("Firma ECDSA:", firma.hex()[:32], "... (DER format)")
+
+# Verificar
+try:
+    public_key.verify(firma, mensaje, ec.ECDSA(hashes.SHA256()))
+    print("Firma VÁLIDA")
+except Exception as e:
+    print("Firma INVÁLIDA:", e)
+            </code></pre>
+            <p>
+              La librería `cryptography` usa RFC 6979 (nonce determinístico)
+              automáticamente — evita el error de Sony PS3.
+            </p>
+          </section>
+          <section>
+            <h3>El Fallo Catastrófico de Sony PS3 (2010)</h3>
+            <ul>
+              <li>
+                Sony firmaba todos los binarios de PS3 con ECDSA usando
+                el <strong>mismo valor k</strong> en cada firma
+              </li>
+              <li>
+                Matemáticamente: si k es idéntico en dos firmas (r₁=r₂=r):
+                <code>k = (h₁ - h₂) × (s₁ - s₂)⁻¹ mod n</code>
+              </li>
+              <li>
+                Una vez conocido k: <code>d = (s×k - h) × r⁻¹ mod n</code>
+                — clave privada de Sony completamente expuesta
+              </li>
+              <li>
+                El grupo fail0verflow y George Hotz publicaron la clave —
+                cualquiera podía firmar software "oficial" para la consola
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>EdDSA — Ed25519</h2>
+          </section>
+          <section>
+            <h3>¿Por qué Ed25519 sobre ECDSA?</h3>
+            <p>
+              EdDSA (Edwards-curve Digital Signature Algorithm) fue diseñado
+              para eliminar las vulnerabilidades comunes de ECDSA:
+            </p>
+            <ul>
+              <li>
+                <strong>Nonce determinístico:</strong> k = H(clave_privada || mensaje).
+                No puede reutilizarse. Inmune al ataque Sony PS3
+              </li>
+              <li>
+                <strong>Tiempo constante:</strong> Resistente a timing attacks por diseño
+              </li>
+              <li>
+                <strong>Sin parámetros cuestionables:</strong> Curve25519 fue diseñada
+                con criterios de seguridad transparentes por D.J. Bernstein
+              </li>
+              <li>
+                <strong>Más rápido:</strong> Verificación ~2x más rápida que ECDSA-P256
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Ed25519 en Código (Python)</h3>
+            <pre><code class="python">from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PublicFormat, PrivateFormat, BestAvailableEncryption
+)
+
+# Generar par de claves
+private_key = Ed25519PrivateKey.generate()
+public_key = private_key.public_key()
+
+# Serializar clave pública (32 bytes compactos)
+pub_bytes = public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)
+print("Clave pública Ed25519:", pub_bytes.hex())
+
+# Firmar — nonce determinístico, tiempo constante, 64 bytes
+mensaje = b"Contrato digital autenticado"
+firma = private_key.sign(mensaje)
+print("Firma Ed25519 (64 bytes):", firma.hex())
+
+# Verificar
+try:
+    public_key.verify(firma, mensaje)
+    print("Firma VÁLIDA")
+except Exception:
+    print("Firma INVÁLIDA")
+            </code></pre>
+          </section>
+          <section>
+            <h3>Generación de Clave SSH Ed25519</h3>
+            <pre><code class="bash"># Generar clave Ed25519 para SSH (recomendado sobre RSA-4096)
+ssh-keygen -t ed25519 -C "usuario@dominio.com"
+# Produce: ~/.ssh/id_ed25519 (privada) y ~/.ssh/id_ed25519.pub (pública)
+
+# La clave pública es solo 68 caracteres — vs ~800 de RSA-4096
+# cat ~/.ssh/id_ed25519.pub
+# ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... usuario@dominio.com
+
+# Usar passphrase para cifrar la clave privada en disco
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Comparación: RSA vs ECC</h2>
+          </section>
+          <section>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Seguridad</th>
+                <th>RSA / DH</th>
+                <th>ECC</th>
+                <th>Simétrico equiv.</th>
+              </tr>
+              <tr>
+                <td>80 bits</td>
+                <td>RSA-1024</td>
+                <td>ECC-160</td>
+                <td>2-TDEA</td>
+              </tr>
+              <tr>
+                <td>112 bits</td>
+                <td>RSA-2048</td>
+                <td>ECC-224</td>
+                <td>3-TDEA / AES-112</td>
+              </tr>
+              <tr>
+                <td>128 bits</td>
+                <td>RSA-3072</td>
+                <td>ECC-256</td>
+                <td>AES-128</td>
+              </tr>
+              <tr>
+                <td>192 bits</td>
+                <td>RSA-7680</td>
+                <td>ECC-384</td>
+                <td>AES-192</td>
+              </tr>
+              <tr>
+                <td>256 bits</td>
+                <td>RSA-15360</td>
+                <td>ECC-521</td>
+                <td>AES-256</td>
+              </tr>
+            </table>
+            <p style="font-size: 1rem">ECC-256 tiene el mismo nivel de seguridad que RSA-3072 con claves 12x más pequeñas</p>
+          </section>
+          <section>
+            <h3>Rendimiento: RSA vs ECC (operaciones/segundo)</h3>
+            <table style="font-size: 1.3rem">
+              <tr>
+                <th>Operación</th>
+                <th>RSA-2048</th>
+                <th>ECDSA P-256</th>
+                <th>Ed25519</th>
+              </tr>
+              <tr>
+                <td>Generar clave</td>
+                <td>Lento (~50ms)</td>
+                <td>Rápido (&lt;1ms)</td>
+                <td>Muy rápido (&lt;1ms)</td>
+              </tr>
+              <tr>
+                <td>Firmar</td>
+                <td>Lento (~2ms)</td>
+                <td>Rápido (~0.1ms)</td>
+                <td>Muy rápido (~0.05ms)</td>
+              </tr>
+              <tr>
+                <td>Verificar</td>
+                <td>Muy rápido (~0.05ms)</td>
+                <td>Rápido (~0.2ms)</td>
+                <td>Rápido (~0.1ms)</td>
+              </tr>
+              <tr>
+                <td>Tamaño de clave</td>
+                <td>256 bytes</td>
+                <td>64 bytes</td>
+                <td>32 bytes</td>
+              </tr>
+            </table>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Curvas Seguras vs Inseguras</h2>
+          </section>
+          <section>
+            <h3>Criterios de una Curva Segura (SafeCurves)</h3>
+            <p>
+              safecurves.cr.yp.to — proyecto de D.J. Bernstein que evalúa curvas
+              según criterios de seguridad e implementabilidad:
+            </p>
+            <ul>
+              <li><strong>CM discriminante grande:</strong> resistencia a ataques de subgrupo</li>
+              <li><strong>Twist security:</strong> resistencia a ataques en la curva torcida</li>
+              <li><strong>Completitud:</strong> suma de puntos siempre definida (evita casos especiales que causan bugs)</li>
+              <li><strong>Tiempo constante:</strong> implementable sin branches secretos</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Curvas Recomendadas</h3>
+            <table style="font-size: 1.2rem">
+              <tr>
+                <th>Curva</th>
+                <th>Uso</th>
+                <th>SafeCurves</th>
+                <th>Notas</th>
+              </tr>
+              <tr>
+                <td><strong>Curve25519</strong></td>
+                <td>X25519 (ECDH)</td>
+                <td>Sí</td>
+                <td>Recomendado para TLS, SSH</td>
+              </tr>
+              <tr>
+                <td><strong>Ed25519</strong></td>
+                <td>EdDSA (firmas)</td>
+                <td>Sí</td>
+                <td>Recomendado para firmas</td>
+              </tr>
+              <tr>
+                <td>P-256 (NIST)</td>
+                <td>ECDSA, ECDH</td>
+                <td>Parcial</td>
+                <td>Ampliamente soportado</td>
+              </tr>
+              <tr>
+                <td>secp256k1</td>
+                <td>Bitcoin/Ethereum</td>
+                <td>Parcial</td>
+                <td>Solo para compatibilidad</td>
+              </tr>
+              <tr>
+                <td>Dual_EC_DRBG</td>
+                <td>PRNG (NSA)</td>
+                <td>Backdoor NSA</td>
+                <td>NUNCA usar</td>
+              </tr>
+            </table>
+          </section>
+          <section>
+            <h3>Dual_EC_DRBG — El Backdoor de la NSA (2013)</h3>
+            <ul>
+              <li>
+                Generador de números pseudoaleatorios basado en curvas elípticas,
+                estandarizado por NIST en 2006
+              </li>
+              <li>
+                Revelaciones de Snowden (2013) confirmaron que la NSA pagó a RSA Security
+                10 millones USD para hacer este PRNG el predeterminado en su toolkit
+              </li>
+              <li>
+                Si la NSA conoce la relación entre los dos puntos Q y P usados,
+                puede predecir todos los valores aleatorios generados —
+                rompiendo toda la criptografía que depende de él
+              </li>
+              <li>
+                <strong>Afectó:</strong> Juniper Networks, RSA BSAFE, OpenSSL hasta 2014
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Aplicaciones de ECC</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>TLS 1.3 / HTTPS:</strong> ECDHE con X25519 o P-256
+                para intercambio de claves. ECDSA o EdDSA para certificados
+              </li>
+              <li>
+                <strong>Blockchain:</strong> secp256k1 + ECDSA (Bitcoin, Ethereum);
+                Ed25519 (Solana, Cardano, Monero)
+              </li>
+              <li>
+                <strong>SSH:</strong> Ed25519 para autenticación de usuarios y servidores
+              </li>
+              <li>
+                <strong>Signal / WhatsApp / iMessage:</strong>
+                X25519 + Ed25519 en el protocolo de mensajería
+              </li>
+              <li>
+                <strong>Dispositivos IoT:</strong> ECC por restricciones de CPU y memoria
+              </li>
+              <li>
+                <strong>Passport y DNI electrónico:</strong>
+                ECDSA sobre curvas NIST para firmas y autenticación
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Errores Comunes en ECC</h2>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Reutilizar nonce k en ECDSA:</strong>
+                Expone la clave privada completamente — el error de Sony PS3.
+                Usar Ed25519 o asegurarse de usar RFC 6979
+              </li>
+              <li>
+                <strong>Usar curvas con parámetros cuestionables:</strong>
+                Evitar curvas NIST si la privacidad es crítica y se desconfía
+                del origen de los parámetros. Preferir Curve25519
+              </li>
+              <li>
+                <strong>No validar el punto público recibido:</strong>
+                Un punto en la curva torcida puede filtrar bits de la clave privada.
+                Usar curvas con twist security (Curve25519)
+              </li>
+              <li>
+                <strong>Implementar ECC desde cero:</strong>
+                Los casos especiales (punto en el infinito, cofactor) son trampas.
+                Usar libsodium, cryptography (Python), Web Crypto API
+              </li>
+            </ul>
+          </section>
+          <section>
+            <ul>
+              <li>
+                <strong>Confundir ECDH y ECDSA:</strong>
+                Son operaciones distintas. La clave de un par ECDH
+                no debe usarse para firmar — clave única por propósito
+              </li>
+              <li>
+                <strong>No derivar la clave del secreto ECDH:</strong>
+                El punto S = k × Q no debe usarse directamente como clave AES.
+                Siempre pasar por HKDF u otra KDF
+              </li>
+              <li>
+                <strong>Ignorar small subgroup attacks:</strong>
+                Con algunas curvas, claves públicas mal formadas pueden forzar
+                al otro extremo a operar en un subgrupo pequeño.
+                Validar siempre el orden del punto recibido
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h2>Conclusión</h2>
+          <p>
+            ECC es la mejor alternativa a RSA para aplicaciones modernas
+            por su <strong>alta seguridad, eficiencia y claves compactas</strong>.
+          </p>
+          <ul>
+            <li><strong>Para intercambio de claves:</strong> X25519 (ECDH)</li>
+            <li><strong>Para firmas digitales:</strong> Ed25519 (EdDSA)</li>
+            <li><strong>Para compatibilidad amplia:</strong> P-256 (ECDSA)</li>
+            <li>
+              <strong>Para blockchain legacy:</strong> secp256k1 (ECDSA)
+            </li>
+          </ul>
+          <p style="font-size: 1.1rem">
+            Migrar de RSA a Ed25519/X25519 mejora seguridad, rendimiento y reduce
+            superficie de ataque sin sacrificar compatibilidad.
+          </p>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+      });
+    </script>
+  </body>
+</html>
